@@ -10,9 +10,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['axios'], // Ensure axios is included during optimization
+  },
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      external: ['axios'], // Prevent Rollup from trying to bundle axios
+    },
   },
   base: './' 
 })
