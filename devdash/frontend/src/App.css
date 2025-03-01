@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Remove the max-width constraint from root */
+/* Remove the max-width constraint from root*/
 #root {
   width: 100%;
   min-height: 100vh;
