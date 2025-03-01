@@ -16,9 +16,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
-      external: ['axios'], // Prevent Rollup from trying to bundle axios
-    },
   },
   base: './' 
 })
