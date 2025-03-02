@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    restart: always 
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - STACK_EXCHANGE_API_KEY=${STACK_EXCHANGE_API_KEY}
+      - HACKERRANK_API_KEY=${HACKERRANK_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - DEBUG=${DEBUG}

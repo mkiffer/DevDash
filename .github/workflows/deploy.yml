@@ -1,0 +1,111 @@
+name: Deploy Developer Dashboard Backend
+
+on:
+  push:
+    branches:
+      - main  # Or change to your main branch name (master, production, etc.)
+    paths:
+      - 'devdash/backend/**'  # Only trigger when changes are made to backend code
+      - '.github/workflows/**'  # Or when workflows change
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+
+jobs:
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd devdash/backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run tests
+        run: |
+          cd devdash/backend
+          python -m pytest
+        env:
+          # Use placeholder values for testing
+          ANTHROPIC_API_KEY: ${{ secrets.TEST_ANTHROPIC_API_KEY }}
+          STACK_EXCHANGE_API_KEY: ${{ secrets.TEST_STACK_EXCHANGE_API_KEY }}
+          ENVIRONMENT: test
+          DATABASE_URL: sqlite:///./test.db
+
+  build-and-deploy:
+    name: Build and Deploy
+    needs: test  # Only run this job if tests pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2   # Change to your AWS region
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: dev-dashboard-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./devdash
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Image pushed to ECR: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Get secrets from AWS Secrets Manager
+        run: |
+          echo "::add-mask::$(aws secretsmanager get-secret-value --secret-id dev-dashboard/DATABASE_URL --query SecretString --output text)"
+          echo "DATABASE_URL=$(aws secretsmanager get-secret-value --secret-id dev-dashboard/DATABASE_URL --query SecretString --output text)" >> $GITHUB_ENV
+
+      - name: Run database migrations
+        run: |
+          chmod +x ./devdash/scripts/deploy_db.sh
+          ./devdash/scripts/deploy_db.sh
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      # Comment out or remove the ECS specific steps
+      # - name: Update ECS service
+      #  run: |
+      #    aws ecs update-service --cluster dev-dashboard-cluster --service dev-dashboard-service --force-new-deployment
+      #    echo "ECS service update initiated"
+
+      # Use Elastic Beanstalk deployment instead
+      - name: Generate deployment package
+        run: |
+          zip -r deploy.zip ./devdash/backend/ ./devdash/Dockerfile ./devdash/docker-compose.yml ./devdash/.ebextensions/ ./devdash/.platform/ -x "*.git*" "*__pycache__*" "*.pyc"
+          echo "Created deployment package: deploy.zip"
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: dev-dashboard
+          environment_name: dev-dashboard-prod
+          region: ap-southeast-2  # Change to your region
+          version_label: ${{ github.sha }}
+          deployment_package: deploy.zip
+          wait_for_deployment: true
+          wait_for_environment_recovery: 300

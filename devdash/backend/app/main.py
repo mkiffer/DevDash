@@ -2,6 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routes import stack_overflow, chat, hackerrank
+from app.models.base import Base
+from sqlalchemy import create_engine
+from app.core.config import settings
+
+def setup_database():
+    """Initialize database on startup if needed"""
+    # Only create tables directly in development
+    if settings.ENVIRONMENT == "development":
+        engine = create_engine(settings.DATABASE_URL)
+        Base.metadata.create_all(engine)
 
 def create_application() -> FastAPI:
     application = FastAPI(
@@ -39,4 +49,5 @@ def create_application() -> FastAPI:
 
     return application
 
+setup_database()
 app = create_application()
