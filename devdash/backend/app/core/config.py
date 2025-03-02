@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     # CORS Configuration
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",  # Vite default
-        "http://localhost:3000",  # Alternative frontend port
+        "http://localhost:3000",# Alternative frontend port
+        "https://main.d34kkik6298snw.amplifyapp.com/"
+        
     ]
     
     # Stack Exchange API
@@ -20,7 +22,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     # Database settings
-    DATABASE_URL: str = "sqlite:///./chat.db"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./chat.db")
     
     # API Keys
     ANTHROPIC_API_KEY: str
