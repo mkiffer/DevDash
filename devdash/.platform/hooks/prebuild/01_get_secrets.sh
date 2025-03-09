@@ -20,5 +20,5 @@ echo "STACK_EXCHANGE_API_KEY=$STACKEX_KEY" >> $ENV_FILE
 # Other environment variables
 echo "ENVIRONMENT=production" >> $ENV_FILE
 echo "DEBUG=false" >> $ENV_FILE
-
+#test
 chmod 644 $ENV_FILE
