@@ -1,7 +1,7 @@
 // services/stackOverflowService.ts
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/stackoverflow';
+import { API_BASE_URL } from './apiConfig';
 
 export interface StackOverflowResponse {
   items: any[];

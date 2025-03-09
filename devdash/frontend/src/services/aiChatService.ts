@@ -1,7 +1,6 @@
 // services/aiChatService.ts
 import { ChatMessage, APIResponse } from '../types';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1/chat';
+import { API_BASE_URL } from './apiConfig';
 
 export const chatService = {
   async sendMessage(message: string): Promise<APIResponse<ChatMessage>> {

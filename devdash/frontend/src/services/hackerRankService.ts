@@ -1,7 +1,7 @@
 // services/hackerRankService.ts
 import { APIResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/hackerrank';
+import { API_BASE_URL } from './apiConfig';
 
 export interface HackerRankChallenge {
   id: string;

@@ -20,12 +20,17 @@ def create_application() -> FastAPI:
     )
 
     # Configure CORS
+# in backend/app/main.py
     application.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  
+        "https://yourdomain.com",  # Your production frontend domain
+        "https://main.d34kkik6298snw.amplifyapp.com" # Your Amplify domain
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
     )
 
     # Include routers

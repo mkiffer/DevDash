@@ -10,8 +10,7 @@ echo "DATABASE_URL=$DB_URL" >> $ENV_FILE
 # Retrieve API keys from Secrets Manager
 API_KEYS=$(aws secretsmanager get-secret-value --secret-id "/prod/devdash/api-keys" --query SecretString --output text)
 
-# Extract individual keys using jq (install if needed)
-# You might need to add jq to your instance with: yum install -y jq
+# Extract individual keys using jq
 ANTHROPIC_KEY=$(echo $API_KEYS | jq -r '.anthropic')
 STACKEX_KEY=$(echo $API_KEYS | jq -r '.["stack-exchange"]')
 

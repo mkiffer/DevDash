@@ -2,10 +2,13 @@
 Application entry point for AWS Elastic Beanstalk.
 This file is required for Python Elastic Beanstalk applications.
 """
-from main import app
+import os
+import sys
 
-# This is required for WSGI applications
-application = app  # noqa
+sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend'))
+
+from app.main import app as application
+
 
 if __name__ == "__main__":
     # For local development
