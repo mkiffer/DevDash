@@ -23,28 +23,28 @@ jobs:
           
       - name: Generate deployment package
         run: |
-          # Create a temporary directory for restructuring
           mkdir -p deploy/
-          
-          # Copy backend code
           cp -r devdash/backend deploy/backend
-          
-          # Copy deployment configuration
           cp -r devdash/.ebextensions deploy/
           cp -r devdash/.platform deploy/
-          
-          # Copy or create application entry point
           cp devdash/backend/application.py deploy/
-          
-          # Copy requirements
           cp devdash/backend/requirements.txt deploy/
           
-          # Create deployment zip from the prepared directory
+          # Add a debug script to verify environment
+          mkdir -p deploy/.platform/hooks/postdeploy
+          cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
+          #!/bin/bash
+          echo "Environment variables available:" > /var/log/deploy-debug.log
+          env | grep -v KEY | grep -v SECRET >> /var/log/deploy-debug.log
+          echo "Files in app directory:" >> /var/log/deploy-debug.log
+          find /var/app -type f -name "*.py" | sort >> /var/log/deploy-debug.log
+          chmod 644 /var/log/deploy-debug.log
+          EOF
+          chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
+          
           cd deploy
           zip -r ../deploy.zip .
           cd ..
-          
-          echo "Created deployment package"
         
       - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v21
