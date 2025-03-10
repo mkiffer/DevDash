@@ -1,2 +1,2 @@
-// src/services/apiConfig.ts
+// src/services/apiConfig.ts  
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
