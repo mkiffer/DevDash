@@ -43,12 +43,23 @@ jobs:
           cp devdash/backend/application.py deploy/
           cp devdash/backend/requirements.txt deploy/
           
-          # Create or update security group config to use ID instead of name
-          cat > deploy/.ebextensions/securitygroup.config << 'EOF'
+          # Create or update VPC configuration
+          cat > deploy/.ebextensions/vpc.config << 'EOF'
           option_settings:
+            aws:ec2:vpc:
+              VPCId: "${VPC_ID}"
+              Subnets: "${SUBNET_ID_1},${SUBNET_ID_2}"
+              ELBSubnets: "${SUBNET_ID_1},${SUBNET_ID_2}"
             aws:autoscaling:launchconfiguration:
-              SecurityGroups: ${{ secrets.EB_SECURITY_GROUP_ID }}
+              SecurityGroups: "${SECURITY_GROUP_ID}"
+              InstanceType: t2.micro
           EOF
+          
+          # Process environment variables in config files
+          sed -i "s/\${VPC_ID}/${{ secrets.VPC_ID }}/g" deploy/.ebextensions/vpc.config
+          sed -i "s/\${SUBNET_ID_1}/${{ secrets.SUBNET_ID_1 }}/g" deploy/.ebextensions/vpc.config
+          sed -i "s/\${SUBNET_ID_2}/${{ secrets.SUBNET_ID_2 }}/g" deploy/.ebextensions/vpc.config
+          sed -i "s/\${SECURITY_GROUP_ID}/${{ secrets.SECURITY_GROUP_ID }}/g" deploy/.ebextensions/vpc.config
           
           # Add debug script
           mkdir -p deploy/.platform/hooks/postdeploy
