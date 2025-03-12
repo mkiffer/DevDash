@@ -30,7 +30,7 @@ jobs:
           cp devdash/backend/application.py deploy/
           cp devdash/backend/requirements.txt deploy/
           
-          # Add a debug script to verify environment
+          # Add a debug script to  verify environment
           mkdir -p deploy/.platform/hooks/postdeploy
           cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
           #!/bin/bash

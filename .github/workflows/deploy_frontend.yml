@@ -39,7 +39,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           
 
-      # Alternatively, if using AWS Amplify, use their GitHub Actions
+      # Alternatively, if using AWS Amplify,  use their GitHub Actions
       - name: Deploy to AWS Amplify
         run: |
           # Install AWS Amplify CLI
