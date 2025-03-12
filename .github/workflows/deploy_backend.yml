@@ -24,54 +24,45 @@ jobs:
       - name: Generate deployment package
         run: |
           mkdir -p deploy/
-          cp -r devdash/backend deploy/backend
           
-          # Check if .ebextensions directory exists before copying
+          # Core application files
+          cp -r devdash/backend deploy/backend
+          cp devdash/backend/application.py deploy/
+          cp devdash/backend/requirements.txt deploy/
+          
+          # Copy .ebextensions and .platform directories properly
           if [ -d "devdash/.ebextensions" ]; then
             cp -r devdash/.ebextensions deploy/
           else
             mkdir -p deploy/.ebextensions
           fi
           
-          # Check if .platform directory exists before copying
           if [ -d "devdash/.platform" ]; then
             cp -r devdash/.platform deploy/
           else
             mkdir -p deploy/.platform
           fi
           
-          cp devdash/backend/application.py deploy/
-          cp devdash/backend/requirements.txt deploy/
+          # IMPORTANT: Create a backup of the original environment.config
+          if [ -f "deploy/.ebextensions/01_environment.config" ]; then
+            cp deploy/.ebextensions/01_environment.config deploy/.ebextensions/01_environment.config.bak
+          fi
           
-          # Create or update VPC configuration
-          cat > deploy/.ebextensions/vpc.config << 'EOF'
+          # Create a simplified environment.config without VPC settings
+          cat > deploy/.ebextensions/01_environment.config << 'EOF'
           option_settings:
-            aws:ec2:vpc:
-              VPCId: "${VPC_ID}"
-              Subnets: "${SUBNET_ID_1},${SUBNET_ID_2}"
-              ELBSubnets: "${SUBNET_ID_1},${SUBNET_ID_2}"
-            aws:autoscaling:launchconfiguration:
-              SecurityGroups: "${SECURITY_GROUP_ID}"
-              InstanceType: t2.micro
+            aws:elasticbeanstalk:application:environment:
+              ENVIRONMENT: production
+              DEBUG: false
+              PYTHONPATH: /var/app/venv/staging-LQM1lest/bin
+            
+            aws:elasticbeanstalk:environment:
+              ServiceRole: aws-elasticbeanstalk-service-role
+              LoadBalancerType: application
+            
+            aws:elasticbeanstalk:healthreporting:system:
+              SystemType: enhanced
           EOF
-          
-          # Process environment variables in config files
-          sed -i "s/\${VPC_ID}/${{ secrets.VPC_ID }}/g" deploy/.ebextensions/vpc.config
-          sed -i "s/\${SUBNET_ID_1}/${{ secrets.SUBNET_ID_1 }}/g" deploy/.ebextensions/vpc.config
-          sed -i "s/\${SUBNET_ID_2}/${{ secrets.SUBNET_ID_2 }}/g" deploy/.ebextensions/vpc.config
-          sed -i "s/\${SECURITY_GROUP_ID}/${{ secrets.SECURITY_GROUP_ID }}/g" deploy/.ebextensions/vpc.config
-          
-          # Add debug script
-          mkdir -p deploy/.platform/hooks/postdeploy
-          cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
-          #!/bin/bash
-          echo "Environment variables available:" > /var/log/deploy-debug.log
-          env | grep -v KEY | grep -v SECRET >> /var/log/deploy-debug.log
-          echo "Files in app directory:" >> /var/log/deploy-debug.log
-          find /var/app -type f -name "*.py" | sort >> /var/log/deploy-debug.log
-          chmod 644 /var/log/deploy-debug.log
-          EOF
-          chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
           
           cd deploy
           zip -r ../deploy.zip .
