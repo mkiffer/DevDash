@@ -25,12 +25,32 @@ jobs:
         run: |
           mkdir -p deploy/
           cp -r devdash/backend deploy/backend
-          cp -r devdash/.ebextensions deploy/
-          cp -r devdash/.platform deploy/
+          
+          # Check if .ebextensions directory exists before copying
+          if [ -d "devdash/.ebextensions" ]; then
+            cp -r devdash/.ebextensions deploy/
+          else
+            mkdir -p deploy/.ebextensions
+          fi
+          
+          # Check if .platform directory exists before copying
+          if [ -d "devdash/.platform" ]; then
+            cp -r devdash/.platform deploy/
+          else
+            mkdir -p deploy/.platform
+          fi
+          
           cp devdash/backend/application.py deploy/
           cp devdash/backend/requirements.txt deploy/
           
-          # Add a debug script to  verify environment
+          # Create or update security group config to use ID instead of name
+          cat > deploy/.ebextensions/securitygroup.config << 'EOF'
+          option_settings:
+            aws:autoscaling:launchconfiguration:
+              SecurityGroups: ${{ secrets.EB_SECURITY_GROUP_ID }}
+          EOF
+          
+          # Add debug script
           mkdir -p deploy/.platform/hooks/postdeploy
           cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
           #!/bin/bash
