@@ -14,10 +14,7 @@ from app.main import app
 # Create a WSGI handler that safely handles all requests
 def application(environ, start_response):
     # Use a try-except block with proper fallback
-    try:
-        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-    except (ValueError, TypeError, KeyError):
-        request_body_size = 0
+    environ['CONTENT_LENGTH'] = environ.get('CONTENT_LENGTH', '0')
     
     # Continue with the regular request handling
     return app(environ, start_response)
