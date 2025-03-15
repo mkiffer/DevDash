@@ -10,7 +10,7 @@ ENV_FILE=/var/app/staging/.env
 echo "Starting script with AWS_REGION=${AWS_REGION}" > /var/log/secrets-debug.log
 
 # Retrieve database credentials from Secrets Manager
-DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region ${AWS_REGION} --query SecretString --output text)
+DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region ap-southeast-2 --query SecretString --output text)
 
 # Parse the DB credentials
 DB_USERNAME=$(echo $DB_SECRET | jq -r '.username')
@@ -24,7 +24,7 @@ DATABASE_URL="${DB_ENGINE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}
 echo "DATABASE_URL=$DATABASE_URL" >> $ENV_FILE
 
 # Retrieve API keys from Secrets Manager
-API_KEYS=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/api-keys" --region ${AWS_REGION} --query SecretString --output text)
+API_KEYS=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/api-keys" --region ap-southeast-2 --query SecretString --output text)
 
 # Extract individual keys using jq
 ANTHROPIC_KEY=$(echo $API_KEYS | jq -r '.["anthropic-api-key"]')

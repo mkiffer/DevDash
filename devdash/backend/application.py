@@ -13,17 +13,13 @@ from app.main import app
 
 # Create a WSGI handler that safely handles all requests
 def application(environ, start_response):
-    # This is the line that was causing the error - safely handle missing CONTENT_LENGTH
+    # Use a try-except block with proper fallback
     try:
-        if 'CONTENT_LENGTH' in environ:
-            request_body_size = int(environ['CONTENT_LENGTH'])
-        else:
-            request_body_size = 0
-    except (ValueError, KeyError):
+        request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+    except (ValueError, TypeError):
         request_body_size = 0
     
     # Continue with the regular request handling
-    # This passes control to the ASGI->WSGI adapter that Uvicorn/Gunicorn creates
     return app(environ, start_response)
 
 # For local development
