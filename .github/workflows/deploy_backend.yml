@@ -68,6 +68,12 @@ jobs:
             cp -r devdash/.platform/* deploy/.platform/
           fi
           
+          # Check requirements.txt for psycopg2-binary
+          if ! grep -q "psycopg2-binary" deploy/requirements.txt; then
+            echo "# Adding missing PostgreSQL driver" >> deploy/requirements.txt
+            echo "psycopg2-binary==2.9.9" >> deploy/requirements.txt
+          fi
+          
           # Add enhanced debug script
           cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
           #!/bin/bash
@@ -111,9 +117,14 @@ jobs:
           
           chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
           
-          # Ensure requirements.txt is updated with all dependencies
-          cp devdash/backend/requirements.txt deploy/
-          echo "psycopg2-binary==2.9.9" >> deploy/requirements.txt
+          # Fix the Elastic Beanstalk application.py file if it contains CONTENT_LENGTH error
+          if [ -f "deploy/application.py" ]; then
+            # Backup the original file
+            cp deploy/application.py deploy/application.py.bak
+            
+            # Check for the known error pattern and fix it
+            sed -i 's/request_body_size = int(environ\['\''CONTENT_LENGTH'\''\])/request_body_size = int(environ.get('\''CONTENT_LENGTH'\'', 0))/g' deploy/application.py
+          fi
           
           # Zip the deployment package
           cd deploy
