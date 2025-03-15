@@ -25,28 +25,12 @@ jobs:
         run: |
           mkdir -p deploy/
           
-          # Core application files
-          cp -r devdash/backend deploy/backend
-          cp devdash/backend/application.py deploy/
-          cp devdash/backend/requirements.txt deploy/
+          # Flatten the structure to simplify paths
+          cp -r devdash/backend/* deploy/
           
-          # Copy .ebextensions and .platform directories properly
-          if [ -d "devdash/.ebextensions" ]; then
-            cp -r devdash/.ebextensions deploy/
-          else
-            mkdir -p deploy/.ebextensions
-          fi
-          
-          if [ -d "devdash/.platform" ]; then
-            cp -r devdash/.platform deploy/
-          else
-            mkdir -p deploy/.platform
-          fi
-          
-          # IMPORTANT: Create a backup of the original environment.config
-          if [ -f "deploy/.ebextensions/01_environment.config" ]; then
-            cp deploy/.ebextensions/01_environment.config deploy/.ebextensions/01_environment.config.bak
-          fi
+          # Create missing directories if needed
+          mkdir -p deploy/.ebextensions
+          mkdir -p deploy/.platform/hooks/postdeploy
           
           # Create a simplified environment.config without VPC settings
           cat > deploy/.ebextensions/01_environment.config << 'EOF'
@@ -54,7 +38,7 @@ jobs:
             aws:elasticbeanstalk:application:environment:
               ENVIRONMENT: production
               DEBUG: false
-              PYTHONPATH: /var/app/venv/staging-LQM1lest/bin
+              PYTHONPATH: /var/app
             
             aws:elasticbeanstalk:environment:
               ServiceRole: aws-elasticbeanstalk-service-role
@@ -62,8 +46,76 @@ jobs:
             
             aws:elasticbeanstalk:healthreporting:system:
               SystemType: enhanced
+
+            # Set Python version explicitly
+            aws:elasticbeanstalk:container:python:
+              WSGIPath: application:application
+              NumProcesses: 3
+              NumThreads: 20
           EOF
           
+          # Copy other .ebextensions files but skip the environment config
+          if [ -d "devdash/.ebextensions" ]; then
+            for file in devdash/.ebextensions/*.config; do
+              if [ "$(basename "$file")" != "01_environment.config" ]; then
+                cp "$file" deploy/.ebextensions/
+              fi
+            done
+          fi
+          
+          # Copy .platform files if they exist
+          if [ -d "devdash/.platform" ]; then
+            cp -r devdash/.platform/* deploy/.platform/
+          fi
+          
+          # Add enhanced debug script
+          cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
+          #!/bin/bash
+
+          # Capture enhanced debugging information
+          LOG_FILE="/var/log/deploy-debug.log"
+
+          echo "===================== DEPLOYMENT DEBUG LOG =====================" > $LOG_FILE
+          echo "Date/Time: $(date)" >> $LOG_FILE
+          echo "" >> $LOG_FILE
+
+          echo "===================== ENVIRONMENT VARIABLES =====================" >> $LOG_FILE
+          env | grep -v KEY | grep -v SECRET | sort >> $LOG_FILE
+          echo "" >> $LOG_FILE
+
+          echo "===================== PYTHON VERSION =====================" >> $LOG_FILE
+          python --version >> $LOG_FILE 2>&1
+          pip --version >> $LOG_FILE 2>&1
+          echo "" >> $LOG_FILE
+
+          echo "===================== DIRECTORY STRUCTURE =====================" >> $LOG_FILE
+          echo "Files in /var/app:" >> $LOG_FILE
+          find /var/app -type f -name "*.py" | sort >> $LOG_FILE
+          echo "" >> $LOG_FILE
+
+          echo "===================== PYTHON PACKAGES =====================" >> $LOG_FILE
+          pip list >> $LOG_FILE 2>&1
+          echo "" >> $LOG_FILE
+
+          echo "===================== DEPLOYMENT LOGS =====================" >> $LOG_FILE
+          echo "Last 50 lines of eb-engine.log:" >> $LOG_FILE
+          tail -n 50 /var/log/eb-engine.log >> $LOG_FILE 2>&1
+          echo "" >> $LOG_FILE
+
+          echo "Last 50 lines of eb-activity.log:" >> $LOG_FILE
+          tail -n 50 /var/log/eb-activity.log >> $LOG_FILE 2>&1
+
+          # Make log readable
+          chmod 644 $LOG_FILE
+          EOF
+          
+          chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
+          
+          # Ensure requirements.txt is updated with all dependencies
+          cp devdash/backend/requirements.txt deploy/
+          echo "psycopg2-binary==2.9.9" >> deploy/requirements.txt
+          
+          # Zip the deployment package
           cd deploy
           zip -r ../deploy.zip .
           cd ..
