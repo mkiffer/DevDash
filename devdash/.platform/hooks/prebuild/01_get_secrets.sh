@@ -9,7 +9,7 @@ ENV_FILE=/var/app/staging/.env
 # Set the AWS region explicitly
 # Retrieve database credentials from Secrets Manager
 AWS_REGION="ap-southeast-2"
-DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region $AWS_REGION --query SecretString --output text)
+DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region "${AWS_REGION}" --query SecretString --output text)
 
 # Parse the DB credentials - the format is different than we initially thought
 DB_USERNAME=$(echo $DB_SECRET | jq -r '.username')
