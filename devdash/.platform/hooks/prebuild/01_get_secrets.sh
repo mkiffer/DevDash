@@ -1,16 +1,16 @@
 #!/bin/bash
-set -e
 
-# Hardcode the AWS region
-AWS_REGION="ap-southeast-2"
+# Hard-code the AWS region
+export AWS_REGION="ap-southeast-2"
 
 # Create .env file for environment variables
 ENV_FILE=/var/app/staging/.env
 
-echo "Starting secret retrieval with region: ${AWS_REGION}"
+# Add debugging information
+echo "Starting script with AWS_REGION=${AWS_REGION}" > /var/log/secrets-debug.log
 
 # Retrieve database credentials from Secrets Manager
-DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region "${AWS_REGION}" --query SecretString --output text)
+DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region ${AWS_REGION} --query SecretString --output text)
 
 # Parse the DB credentials
 DB_USERNAME=$(echo $DB_SECRET | jq -r '.username')
@@ -24,7 +24,7 @@ DATABASE_URL="${DB_ENGINE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}
 echo "DATABASE_URL=$DATABASE_URL" >> $ENV_FILE
 
 # Retrieve API keys from Secrets Manager
-API_KEYS=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/api-keys" --region "${AWS_REGION}" --query SecretString --output text)
+API_KEYS=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/api-keys" --region ${AWS_REGION} --query SecretString --output text)
 
 # Extract individual keys using jq
 ANTHROPIC_KEY=$(echo $API_KEYS | jq -r '.["anthropic-api-key"]')
@@ -37,5 +37,7 @@ echo "STACK_EXCHANGE_API_KEY=$STACKEX_KEY" >> $ENV_FILE
 echo "ENVIRONMENT=production" >> $ENV_FILE
 echo "DEBUG=false" >> $ENV_FILE
 
-echo "Secrets retrieved and environment set up successfully" > /var/log/secrets-setup.log
+# Add more debug info
+echo "Script completed successfully" >> /var/log/secrets-debug.log
+
 chmod 644 $ENV_FILE
