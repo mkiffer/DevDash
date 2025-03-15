@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Set the AWS region explicitly
-AWS_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+
+
 
 # Create .env file for environment variables
 ENV_FILE=/var/app/staging/.env
 
+# Set the AWS region explicitly
 # Retrieve database credentials from Secrets Manager
+AWS_REGION="ap-southeast-2"
 DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region $AWS_REGION --query SecretString --output text)
 
 # Parse the DB credentials - the format is different than we initially thought
