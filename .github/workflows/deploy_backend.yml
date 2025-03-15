@@ -1,4 +1,4 @@
-name: Deploy Backend to AWS Elastic beanstalk
+name: Deploy Backend to AWS Elastic Beanstalk
 
 on:
   push:
@@ -138,7 +138,7 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: DevDashBackend
           environment_name: DevDashBackend-env
-          version_label: backend-${{ github.sha }}
+          version_label: backend-${{ github.sha }}-${{ github.run_id }}
           region: ${{ secrets.AWS_REGION }}
           deployment_package: deploy.zip
           wait_for_deployment: true
