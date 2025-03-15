@@ -16,7 +16,7 @@ def application(environ, start_response):
     # Use a try-except block with proper fallback
     try:
         request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, KeyError):
         request_body_size = 0
     
     # Continue with the regular request handling
