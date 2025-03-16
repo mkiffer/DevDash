@@ -1,6 +1,5 @@
 """
 Application entry point for AWS Elastic Beanstalk.
-This file is required for Python Elastic Beanstalk applications.
 """
 import os
 import sys
@@ -11,10 +10,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import the FastAPI application
 from app.main import app
 
-# Create a WSGI handler that safely handles all requests
+# Create a WSGI handler with proper error handling
 def application(environ, start_response):
-    # Use a try-except block with proper fallback
-    environ['CONTENT_LENGTH'] = environ.get('CONTENT_LENGTH', '0')
+    # Handle CONTENT_LENGTH properly
+    try:
+        if 'CONTENT_LENGTH' not in environ or environ['CONTENT_LENGTH'] == '':
+            environ['CONTENT_LENGTH'] = '0'
+        content_length = int(environ['CONTENT_LENGTH'])
+    except (ValueError, TypeError):
+        environ['CONTENT_LENGTH'] = '0'
+    
+    # Log application startup for troubleshooting
+    with open('/var/log/app_startup.log', 'a') as f:
+        f.write(f"Starting application with environ keys: {list(environ.keys())}\n")
     
     # Continue with the regular request handling
     return app(environ, start_response)
