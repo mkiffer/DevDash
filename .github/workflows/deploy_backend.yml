@@ -33,6 +33,7 @@ jobs:
           mkdir -p deploy/.platform/hooks/predeploy
           mkdir -p deploy/.platform/hooks/postdeploy
           mkdir -p deploy/.platform/hooks/prebuild
+          mkdir -p deploy/.platform/nginx/conf.d/proxy.conf
           
           # Create a simplified environment.config without VPC settings
           cat > deploy/.ebextensions/01_environment.config << 'EOF'
