@@ -1,4 +1,4 @@
-name: Deploy Backend to AWS Elastic Beanstalk
+name: Deploy Backend to AWS Elastic beanstalk
 
 on:
   push:
@@ -30,6 +30,7 @@ jobs:
           
           # Create missing directories if needed
           mkdir -p deploy/.ebextensions
+          mkdir -p deploy/.platform/hooks/predeploy
           mkdir -p deploy/.platform/hooks/postdeploy
           
           # Create a simplified environment.config without VPC settings
@@ -63,16 +64,166 @@ jobs:
             done
           fi
           
-          # Copy .platform files if they exist
-          if [ -d "devdash/.platform" ]; then
-            cp -r devdash/.platform/* deploy/.platform/
-          fi
+          # Create PostgreSQL dependencies configuration
+          cat > deploy/.ebextensions/05_postgresql.config << 'EOF'
+          packages:
+            dnf:
+              postgresql-devel: []
+              gcc: []
+              python3-devel: []
+              
+          commands:
+            01_install_postgresql_devel:
+              command: "dnf install -y postgresql-devel"
+              
+          container_commands:
+            01_verify_pg_config:
+              command: "which pg_config || echo 'pg_config not found' > /var/log/pg_config_missing.log"
+          EOF
           
-          # Check requirements.txt for psycopg2-binary
-          if ! grep -q "psycopg2-binary" deploy/requirements.txt; then
-            echo "# Adding missing PostgreSQL driver" >> deploy/requirements.txt
-            echo "psycopg2-binary==2.9.9" >> deploy/requirements.txt
-          fi
+          # Create security configuration
+          cat > deploy/.ebextensions/06_security.config << 'EOF'
+          files:
+            "/etc/nginx/conf.d/security.conf":
+              mode: "000644"
+              owner: root
+              group: root
+              content: |
+                # Block access to sensitive paths
+                location ~ ^/(\.env|\.git|config/|secrets/|private/|backup/|api_keys/|storage/) {
+                  deny all;
+                  return 403;
+                }
+                
+                # Block common scanning patterns
+                location ~ \.(php|aspx)$ {
+                  deny all;
+                  return 403;
+                }
+
+            "/var/log/security_setup.log":
+              mode: "000644"
+              owner: root
+              group: root
+              content: |
+                Security configuration applied
+
+          container_commands:
+            01_reload_nginx:
+              command: "service nginx reload"
+          EOF
+          
+          # Create debugging configuration
+          cat > deploy/.ebextensions/07_debug.config << 'EOF'
+          files:
+            "/tmp/debug_info.sh":
+              mode: "000755"
+              owner: root
+              group: root
+              content: |
+                #!/bin/bash
+                echo "=== System Information ===" > /var/log/eb_debug.log
+                cat /etc/os-release >> /var/log/eb_debug.log
+                
+                echo "=== Python Information ===" >> /var/log/eb_debug.log
+                which python3 >> /var/log/eb_debug.log
+                python3 --version >> /var/log/eb_debug.log
+                
+                echo "=== Package Information ===" >> /var/log/eb_debug.log
+                dnf list installed | grep python >> /var/log/eb_debug.log
+                dnf list installed | grep postgres >> /var/log/eb_debug.log
+                
+                echo "=== Application Files ===" >> /var/log/eb_debug.log
+                ls -la /var/app/current/ >> /var/log/eb_debug.log
+                
+                echo "=== Application WSGI File ===" >> /var/log/eb_debug.log
+                [ -f "/var/app/current/application.py" ] && head -n 150 /var/app/current/application.py >> /var/log/eb_debug.log || echo "application.py not found" >> /var/log/eb_debug.log
+                
+                echo "=== Debug Complete ===" >> /var/log/eb_debug.log
+
+          container_commands:
+            01_run_debug:
+              command: "/tmp/debug_info.sh"
+          EOF
+          
+          # Create PostgreSQL diagnostic configuration
+          cat > deploy/.ebextensions/08_diagnose.config << 'EOF'
+          container_commands:
+            01_check_pg_config:
+              command: |
+                echo "Checking for pg_config..." > /var/log/pg_config_check.log
+                which pg_config >> /var/log/pg_config_check.log 2>&1
+                echo "PATH=$PATH" >> /var/log/pg_config_check.log
+                echo "Installed packages:" >> /var/log/pg_config_check.log
+                dnf list installed | grep -E 'postgres|pg|psql' >> /var/log/pg_config_check.log
+                echo "Python version:" >> /var/log/pg_config_check.log
+                python3 --version >> /var/log/pg_config_check.log
+                echo "Pip version:" >> /var/log/pg_config_check.log
+                pip3 --version >> /var/log/pg_config_check.log
+          EOF
+          
+          # Create a predeploy hook to install PostgreSQL before pip runs
+          cat > deploy/.platform/hooks/predeploy/01_install_pg.sh << 'EOF'
+          #!/bin/bash
+          echo "Running PostgreSQL predeploy hook" > /var/log/pg_predeploy.log
+          dnf install -y postgresql-devel gcc python3-devel
+          echo "Path before installation:" >> /var/log/pg_predeploy.log
+          echo $PATH >> /var/log/pg_predeploy.log
+          echo "Checking for pg_config after installation:" >> /var/log/pg_predeploy.log
+          which pg_config >> /var/log/pg_predeploy.log 2>&1 || echo "pg_config not found after installation" >> /var/log/pg_predeploy.log
+          echo "PostgreSQL development packages installed via predeploy hook" >> /var/log/pg_predeploy.log
+          EOF
+          
+          chmod +x deploy/.platform/hooks/predeploy/01_install_pg.sh
+          
+          # Create AWS secrets retrieval script
+          cat > deploy/.platform/hooks/prebuild/01_get_secrets.sh << 'EOF'
+          #!/bin/bash
+
+          # Hard-code the AWS region directly in the commands
+          AWS_REGION="ap-southeast-2"
+
+          # Create .env file for environment variables
+          ENV_FILE=/var/app/staging/.env
+
+          # Add debugging information
+          echo "Starting script with AWS_REGION=${AWS_REGION}" > /var/log/secrets-debug.log
+
+          # Retrieve database credentials from Secrets Manager
+          DB_SECRET=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/dbsecret" --region ${AWS_REGION} --query SecretString --output text)
+
+          # Parse the DB credentials
+          DB_USERNAME=$(echo $DB_SECRET | jq -r '.username')
+          DB_PASSWORD=$(echo $DB_SECRET | jq -r '.password')
+          DB_ENGINE=$(echo $DB_SECRET | jq -r '.engine')
+          DB_HOST=$(echo $DB_SECRET | jq -r '.host')
+          DB_PORT=$(echo $DB_SECRET | jq -r '.port')
+
+          # Construct the DATABASE_URL
+          DATABASE_URL="${DB_ENGINE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_USERNAME}"
+          echo "DATABASE_URL=$DATABASE_URL" >> $ENV_FILE
+
+          # Retrieve API keys from Secrets Manager
+          API_KEYS=$(aws secretsmanager get-secret-value --secret-id "prod/devdash/api-keys" --region ${AWS_REGION} --query SecretString --output text)
+
+          # Extract individual keys using jq
+          ANTHROPIC_KEY=$(echo $API_KEYS | jq -r '.["anthropic-api-key"]')
+          STACKEX_KEY=$(echo $API_KEYS | jq -r '.["stack-exchange-api-key"]')
+
+          echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY" >> $ENV_FILE
+          echo "STACK_EXCHANGE_API_KEY=$STACKEX_KEY" >> $ENV_FILE
+
+          # Other environment variables
+          echo "ENVIRONMENT=production" >> $ENV_FILE
+          echo "DEBUG=false" >> $ENV_FILE
+
+          # Add more debug info
+          echo "Script completed successfully" >> /var/log/secrets-debug.log
+
+          chmod 644 $ENV_FILE
+          EOF
+          
+          chmod +x deploy/.platform/hooks/prebuild/01_get_secrets.sh
           
           # Add enhanced debug script
           cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
@@ -117,19 +268,65 @@ jobs:
           
           chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
           
+          # Add NGINX configuration
+          cat > deploy/.platform/nginx/conf.d/proxy.conf << 'EOF'
+          client_max_body_size 20M;
+
+          upstream api {
+            server 127.0.0.1:8000;
+            keepalive 256;
+          }
+
+          server {
+            listen 80;
+
+            location / {
+              proxy_pass http://api;
+              proxy_set_header Connection "";
+              proxy_http_version 1.1;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_buffering off;
+            }
+          }
+          EOF
+          
+          # Check requirements.txt for psycopg2-binary
+          if [ -f "deploy/requirements.txt" ]; then
+            # Make sure we're using a specific version that works well with EB
+            sed -i 's/psycopg2-binary.*/psycopg2-binary==2.9.5/g' deploy/requirements.txt
+            
+            # If psycopg2-binary isn't in requirements.txt, add it
+            if ! grep -q "psycopg2-binary" deploy/requirements.txt; then
+              echo "# Adding PostgreSQL driver" >> deploy/requirements.txt
+              echo "psycopg2-binary==2.9.5" >> deploy/requirements.txt
+            fi
+          fi
+          
           # Fix the Elastic Beanstalk application.py file if it contains CONTENT_LENGTH error
           if [ -f "deploy/application.py" ]; then
             # Backup the original file
             cp deploy/application.py deploy/application.py.bak
             
-            # Check for the known error pattern and fix it
-            sed -i 's/request_body_size = int(environ\['\''CONTENT_LENGTH'\''\])/request_body_size = int(environ.get('\''CONTENT_LENGTH'\'', 0))/g' deploy/application.py
+            # Replace the CONTENT_LENGTH handling code with a more robust version
+            sed -i 's/request_body_size = int(environ\[.*CONTENT_LENGTH.*\])/try:\n        request_body_size = int(environ.get("CONTENT_LENGTH", 0))\n    except (ValueError, TypeError):\n        request_body_size = 0/g' deploy/application.py
+            
+            # Add version marker to help with debugging
+            sed -i "1s/^/# Version: $(date +%Y%m%d-%H%M%S)\n/" deploy/application.py
+            
+            echo "Fixed application.py CONTENT_LENGTH handling"
           fi
           
           # Zip the deployment package
           cd deploy
           zip -r ../deploy.zip .
           cd ..
+          
+          # Print package contents for verification
+          echo "Checking deployment package contents:"
+          unzip -l deploy.zip | grep -E 'application.py|postgresql|pg_config|psycopg2'
         
       - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v21
@@ -142,4 +339,4 @@ jobs:
           region: ${{ secrets.AWS_REGION }}
           deployment_package: deploy.zip
           wait_for_deployment: true
-          use_existing_version_if_available: true
+          use_existing_version_if_available: false
