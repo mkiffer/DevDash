@@ -1,4 +1,4 @@
-name: Deploy Backend to AWS Elastic beanstalk
+name: Deploy Backend to AWS Elastic Beanstalk
 
 on:
   push:
