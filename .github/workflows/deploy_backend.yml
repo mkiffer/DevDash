@@ -28,13 +28,13 @@ jobs:
           # Flatten the structure to simplify paths
           cp -r devdash/backend/* deploy/
           
-          # Create missing directories if needed
+          # Create all necessary directories
           mkdir -p deploy/.ebextensions
           mkdir -p deploy/.platform/hooks/predeploy
           mkdir -p deploy/.platform/hooks/postdeploy
           mkdir -p deploy/.platform/hooks/prebuild
           mkdir -p deploy/.platform/nginx/conf.d
-
+          
           # Create a simplified environment.config without VPC settings
           cat > deploy/.ebextensions/01_environment.config << 'EOF'
           option_settings:
@@ -66,14 +66,25 @@ jobs:
             done
           fi
           
-          # Create PostgreSQL dependencies configuration
-          cat > deploy/.ebextensions/05_postgresql.config << 'EOF'
+          # Create jq installation configuration
+          cat > deploy/.ebextensions/02_install_jq.config << 'EOF'
+          packages:
+            dnf:
+              jq: []
+          EOF
+          
+          # Create PostgreSQL and development dependencies configuration
+          cat > deploy/.ebextensions/04_packages.config << 'EOF'
           packages:
             dnf:
               postgresql-devel: []
               gcc: []
+              make: []
               python3-devel: []
-              
+          EOF
+          
+          # Create PostgreSQL specific configuration
+          cat > deploy/.ebextensions/05_postgresql.config << 'EOF'
           commands:
             01_install_postgresql_devel:
               command: "dnf install -y postgresql-devel"
@@ -81,6 +92,32 @@ jobs:
           container_commands:
             01_verify_pg_config:
               command: "which pg_config || echo 'pg_config not found' > /var/log/pg_config_missing.log"
+          EOF
+          
+          # Create CONTENT_LENGTH fix configuration
+          cat > deploy/.ebextensions/05_fix_content_length.config << 'EOF'
+          files:
+            "/tmp/fix_application.sh":
+              mode: "000755"
+              owner: root
+              group: root
+              content: |
+                #!/bin/bash
+                APP_FILE=/var/app/current/application.py
+                if [ -f "$APP_FILE" ]; then
+                  # Backup the file
+                  cp $APP_FILE ${APP_FILE}.bak
+                  
+                  # Fix the CONTENT_LENGTH issue
+                  sed -i 's/request_body_size = int(environ\[.\{0,4\}CONTENT_LENGTH.\{0,4\}\])/request_body_size = int(environ.get("CONTENT_LENGTH", 0))/g' $APP_FILE
+                  echo "Fixed CONTENT_LENGTH issue in application.py" > /var/log/app_fix.log
+                else
+                  echo "application.py not found at $APP_FILE" > /var/log/app_fix.log
+                fi
+
+          container_commands:
+            01_fix_content_length:
+              command: "/tmp/fix_application.sh"
           EOF
           
           # Create security configuration
@@ -112,10 +149,10 @@ jobs:
 
           container_commands:
             01_reload_nginx:
-              command: "service nginx reload"
+              command: "service nginx reload || echo 'Nginx not running yet'"
           EOF
           
-          # Create debugging configuration
+          # Create diagnostic configuration
           cat > deploy/.ebextensions/07_debug.config << 'EOF'
           files:
             "/tmp/debug_info.sh":
@@ -164,7 +201,37 @@ jobs:
                 pip3 --version >> /var/log/pg_config_check.log
           EOF
           
-          # Create a predeploy hook to install PostgreSQL before pip runs
+          # Create Rust installation configuration
+          cat > deploy/.ebextensions/09_rust.config << 'EOF'
+          commands:
+            01_install_rust:
+              command: |
+                curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+                source $HOME/.cargo/env
+                echo "export PATH=$HOME/.cargo/bin:$PATH" >> /etc/profile.d/rust.sh
+                chmod +x /etc/profile.d/rust.sh
+          EOF
+          
+          # Add pip constraints configuration
+          cat > deploy/.ebextensions/10_pip_install.config << 'EOF'
+          files:
+            "/tmp/constraints.txt":
+              mode: "000644"
+              owner: root
+              group: root
+              content: |
+                pydantic==2.3.0
+                pydantic-core==2.6.3
+                
+          container_commands:
+            01_pip_install_with_constraints:
+              command: |
+                cd /var/app/staging
+                pip install --upgrade pip
+                pip install -r requirements.txt -c /tmp/constraints.txt
+          EOF
+          
+          # Create predeploy hook for PostgreSQL
           cat > deploy/.platform/hooks/predeploy/01_install_pg.sh << 'EOF'
           #!/bin/bash
           echo "Running PostgreSQL predeploy hook" > /var/log/pg_predeploy.log
@@ -177,6 +244,19 @@ jobs:
           EOF
           
           chmod +x deploy/.platform/hooks/predeploy/01_install_pg.sh
+          
+          # Create predeploy hook for Rust
+          cat > deploy/.platform/hooks/predeploy/02_install_rust.sh << 'EOF'
+          #!/bin/bash
+          echo "Installing Rust..." > /var/log/rust_install.log
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          echo "PATH=$PATH" >> /var/log/rust_install.log
+          echo "Rust version:" >> /var/log/rust_install.log
+          rustc --version >> /var/log/rust_install.log 2>&1 || echo "Rust installation failed" >> /var/log/rust_install.log
+          EOF
+          
+          chmod +x deploy/.platform/hooks/predeploy/02_install_rust.sh
           
           # Create AWS secrets retrieval script
           cat > deploy/.platform/hooks/prebuild/01_get_secrets.sh << 'EOF'
@@ -227,7 +307,7 @@ jobs:
           
           chmod +x deploy/.platform/hooks/prebuild/01_get_secrets.sh
           
-          # Add enhanced debug script
+          # Create postdeploy debug script
           cat > deploy/.platform/hooks/postdeploy/01_debug.sh << 'EOF'
           #!/bin/bash
 
@@ -270,7 +350,7 @@ jobs:
           
           chmod +x deploy/.platform/hooks/postdeploy/01_debug.sh
           
-          # Add NGINX configuration
+          # Create NGINX configuration
           cat > deploy/.platform/nginx/conf.d/proxy.conf << 'EOF'
           client_max_body_size 20M;
 
@@ -295,6 +375,12 @@ jobs:
           }
           EOF
           
+          # Create constraints file for pip
+          cat > deploy/constraints.txt << 'EOF'
+          pydantic==2.3.0
+          pydantic-core==2.6.3
+          EOF
+          
           # Check requirements.txt for psycopg2-binary
           if [ -f "deploy/requirements.txt" ]; then
             # Make sure we're using a specific version that works well with EB
@@ -305,6 +391,9 @@ jobs:
               echo "# Adding PostgreSQL driver" >> deploy/requirements.txt
               echo "psycopg2-binary==2.9.5" >> deploy/requirements.txt
             fi
+            
+            # Update pydantic to specific version
+            sed -i 's/pydantic==.*/pydantic==2.3.0/g' deploy/requirements.txt
           fi
           
           # Fix the Elastic Beanstalk application.py file if it contains CONTENT_LENGTH error
@@ -328,7 +417,7 @@ jobs:
           
           # Print package contents for verification
           echo "Checking deployment package contents:"
-          unzip -l deploy.zip | grep -E 'application.py|postgresql|pg_config|psycopg2'
+          unzip -l deploy.zip | grep -E 'application.py|postgresql|pg_config|psycopg2|rust|pydantic'
         
       - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v21
