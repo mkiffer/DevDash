@@ -1,5 +1,5 @@
 # .github/workflows/deploy_backend.yml
-name: Deploy Backend to AWS Elastic Beanstalk
+name: Deploy Backend to AWS Elastic beanstalk
 
 on:
   push:
