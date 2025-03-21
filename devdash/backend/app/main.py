@@ -27,6 +27,7 @@ def create_application() -> FastAPI:
         "http://localhost:5173",  
         "https://yourdomain.com",  # Your production frontend domain
         "https://main.d34kkik6298snw.amplifyapp.com" # Your Amplify domain
+        "https://devdash-api-env.e-xhrm98zin3.ap-southeast-2.elasticbeanstalk.com" #devdash domain
     ],
     allow_credentials=True,
     allow_methods=["*"],
