@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+import os
 
 class Settings(BaseSettings):
     # API Configurations
@@ -10,7 +11,8 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",  # Vite default
         "http://localhost:3000",# Alternative frontend port
-        "https://main.d34kkik6298snw.amplifyapp.com/"
+        "https://main.d2u3csthoa3vxa.amplifyapp.com",
+        
         
     ]
     
