@@ -6,7 +6,7 @@ export const chatService = {
   async sendMessage(message: string): Promise<APIResponse<ChatMessage>> {
     try {
       // Adding trailing slash to prevent redirect
-      const response = await fetch(`${API_BASE_URL}/`, {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ export const chatService = {
 
   async getChatHistory(): Promise<APIResponse<ChatMessage[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/history`);
+      const response = await fetch(`${API_BASE_URL}/chat/history`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

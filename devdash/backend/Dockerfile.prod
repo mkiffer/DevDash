@@ -6,9 +6,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install development dependencies
-RUN pip install uvicorn
-
 # Copy the application code
 COPY . .
 
@@ -19,5 +16,5 @@ USER appuser
 # Expose the application port
 EXPOSE 8000
 
-# We use the command from docker-compose for flexibility
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# We use Gunicorn as the production server with Uvicorn workers
+CMD ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
