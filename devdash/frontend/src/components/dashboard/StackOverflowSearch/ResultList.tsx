@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, MessageSquare } from 'lucide-react';
+import  parse  from 'html-react-parser';
 
 interface StackOverflowResult {
   question_id: number;
@@ -20,7 +21,7 @@ interface ResultListProps {
 
 export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelect }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 overflow-y-auto h-full">
       {results.length > 0 ? (
         results.map((result) => (
           <Card key={result.question_id} className="hover:border-gray-400 transition-colors">
@@ -28,7 +29,7 @@ export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelec
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-4">
                   <h3 className="text-sm font-medium flex-1">
-                    {result.title}
+                    {parse(result.title)}
                   </h3>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">

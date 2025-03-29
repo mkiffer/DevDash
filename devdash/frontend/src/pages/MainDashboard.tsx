@@ -22,18 +22,7 @@ const DashboardLayout: React.FC = () => {
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Code Playground Card */}
-          <Card className="min-h-[600px] flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Code2 className="h-6 w-6" />
-                Code Playground
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-auto">
-              <CodePlayground />
-            </CardContent>
-          </Card>
+          
 
           {/* AI Chat Card */}
           <Card className="min-h-[600px] flex flex-col">

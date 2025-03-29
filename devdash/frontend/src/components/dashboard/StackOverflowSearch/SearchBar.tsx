@@ -36,7 +36,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('Input changed to:', newValue); // Debug log
     setInputValue(newValue);
     onQueryChange(newValue);
   };
@@ -49,7 +48,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           placeholder="Search Stack Overflow..."
-          className="pr-10"
+          className="pr-10 w-full"
         />
         <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
       </div>

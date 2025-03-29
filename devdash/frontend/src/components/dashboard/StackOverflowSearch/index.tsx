@@ -49,9 +49,7 @@ export const StackOverflowSearch: React.FC = () => {
     const loadInitialQuestions = async () => {
       try {
         setIsLoading(true);
-        console.log('Loading initial questions...'); // Debug log
         const data = await searchStackOverflow('[score:50] is:question');
-        console.log('Initial questions loaded:', data); // Debug log
         setResults(data.items);
       } catch (error) {
         console.error('Error loading initial questions:', error);

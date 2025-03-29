@@ -39,7 +39,7 @@ export const hackerRankService = {
     difficulty?: string
   ): Promise<APIResponse<HackerRankChallenge[]>> {
     try {
-      let url = `${API_BASE_URL}/challenges?page=${page}&limit=${limit}`;
+      let url = `${API_BASE_URL}/hackerrank/challenges?page=${page}&limit=${limit}`;
       
       if (difficulty) {
         url += `&difficulty=${difficulty}`;
@@ -64,7 +64,7 @@ export const hackerRankService = {
   
   async getRandomChallenge(difficulty?: string): Promise<APIResponse<HackerRankChallenge>> {
     try {
-      let url = `${API_BASE_URL}/challenges/random`;
+      let url = `${API_BASE_URL}/hackerrank/challenges/random`;
       
       if (difficulty) {
         url += `?difficulty=${difficulty}`;
@@ -89,7 +89,7 @@ export const hackerRankService = {
   
   async getChallenge(slug: string): Promise<APIResponse<HackerRankChallenge>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/challenges/${slug}`);
+      const response = await fetch(`${API_BASE_URL}/hackerrank/challenges/${slug}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -112,7 +112,7 @@ export const hackerRankService = {
     language: string
   ): Promise<APIResponse<{id: string}>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/challenges/submit`, {
+      const response = await fetch(`${API_BASE_URL}/hackerrank/challenges/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ export const hackerRankService = {
   
   async getSubmissionResult(submissionId: string): Promise<APIResponse<HackerRankSubmission>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}`);
+      const response = await fetch(`${API_BASE_URL}/hackerrank/submissions/${submissionId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

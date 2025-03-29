@@ -16,7 +16,7 @@ export const searchStackOverflow = async (
   tags?: string
 ): Promise<StackOverflowResponse> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/search`, {
+    const response = await axios.get(`${API_BASE_URL}/stackoverflow/search`, {
       params: {
         query,
         page,
@@ -38,7 +38,7 @@ export const getQuestionAnswers = async (
 ): Promise<StackOverflowResponse> => {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/questions/${questionId}/answers`,
+      `${API_BASE_URL}/stackoverflow/questions/${questionId}/answers`,
       {
         params: {
           page,
@@ -58,7 +58,7 @@ export const getQuestionDetails = async (
   questionId: number
 ): Promise<StackOverflowResponse> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/questions/${questionId}`);
+    const response = await axios.get(`${API_BASE_URL}/stackoverflow/questions/${questionId}`);
     return response.data;
   } catch (error) {
     console.error('Question fetch error:', error);

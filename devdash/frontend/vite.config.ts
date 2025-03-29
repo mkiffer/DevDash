@@ -17,5 +17,16 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    watch: {
+      usePolling: true,  // Important for Docker environments
+      interval: 100      // Polling interval in ms
+    },
+    hmr: {
+      clientPort: 5173  // Match the port exposed in docker-compose
+    }
+  },
   base: './' 
 })

@@ -5,6 +5,7 @@ from app.routes import stack_overflow, chat, hackerrank
 from app.models.base import Base
 from sqlalchemy import create_engine
 from app.core.config import settings
+from fastapi.responses import JSONResponse
 
 def setup_database():
     """Initialize database on startup if needed"""
@@ -33,7 +34,33 @@ def create_application() -> FastAPI:
     allow_methods=["*"],
     allow_headers=["*"],
     )
-
+    # Add a root route to provide API information
+    @application.get("/")
+    async def root():
+        return JSONResponse({
+            "app_name": settings.PROJECT_NAME,
+            "api_version": "v1",
+            "documentation": "/docs",
+            "status": "running",
+            "available_endpoints": [
+                f"{settings.API_V1_STR}/stackoverflow",
+                f"{settings.API_V1_STR}/chat",
+                f"{settings.API_V1_STR}/hackerrank"
+            ]
+        })
+    
+    # Also add an API version root
+    @application.get(f"{settings.API_V1_STR}")
+    async def api_root():
+        return JSONResponse({
+            "version": "v1",
+            "status": "running",
+            "endpoints": [
+                "/stackoverflow",
+                "/chat",
+                "/hackerrank"
+            ]
+        })
     # Include routers
     application.include_router(
         stack_overflow.router,

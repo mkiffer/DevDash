@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import  parse  from 'html-react-parser';
 
 interface Answer {
   answer_id: number;
@@ -47,7 +48,7 @@ export const AnswerView: React.FC<AnswerViewProps> = ({
         answers.map((answer) => (
           <Card 
             key={answer.answer_id} 
-            className={`${answer.is_accepted ? 'border-green-500' : ''} transition-colors`}
+            className={`${answer.is_accepted ? 'border-green-500 overflow:auto' : 'overflow-auto'} transition-colors`}
           >
             <CardHeader className="py-3">
               <CardTitle className="flex justify-between text-base">
@@ -70,10 +71,10 @@ export const AnswerView: React.FC<AnswerViewProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="py-3">
-              <div 
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: answer.body }} 
-              />
+              <div className="prose prose-sm max-w-none overflow-x-auto">
+                  {parse(answer.body)}
+              </div>
+              
               <div className="mt-2 text-xs text-gray-500">
                 Posted: {new Date(answer.creation_date).toLocaleDateString()}
               </div>
