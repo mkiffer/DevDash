@@ -25,6 +25,17 @@ class APIResponse(BaseModel):
     status: int
     message: Optional[str] = None
 
+class Conversation(BaseModel):
+    id : int
+    description : str
+    data : list[ChatMessage]
+
+class ConversationHistory(BaseModel):
+    id : int
+    data : list[Conversation]
+
+
+
 @router.post("/", response_model=APIResponse)
 async def send_message(message_request: MessageRequest):
     try:

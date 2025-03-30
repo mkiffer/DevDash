@@ -41,16 +41,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
-      <div className="flex-1 relative">
+    <form onSubmit={handleSubmit} className="flex gap-2 mb-4 p-[1-px]">
+      <div className="flex-1 relative overflow-visible">
         <Input 
           type="text"
           value={inputValue}
           onChange={handleInputChange}
           placeholder="Search Stack Overflow..."
-          className="pr-10 w-full"
+          className="pr-10 w-full z-10"
+          style={{ display: 'block' }}
         />
-        <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
       </div>
       
       <Button

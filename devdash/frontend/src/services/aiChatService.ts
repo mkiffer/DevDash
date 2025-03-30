@@ -57,7 +57,7 @@ export const chatService = {
 
   async clearHistory(): Promise<APIResponse<any>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/clear`, {
+      const response = await fetch(`${API_BASE_URL}/chat/clear`, {
         method: 'POST',
       });
 

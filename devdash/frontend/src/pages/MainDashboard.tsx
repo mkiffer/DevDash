@@ -25,7 +25,7 @@ const DashboardLayout: React.FC = () => {
           
 
           {/* AI Chat Card */}
-          <Card className="min-h-[600px] flex flex-col">
+          <Card className="h-[600px] flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <MessageSquare className="h-6 w-6" />
@@ -38,7 +38,7 @@ const DashboardLayout: React.FC = () => {
           </Card>
 
           {/* Stack Overflow Card */}
-          <Card className="min-h-[600px] flex flex-col">
+          <Card className="h-[600px] flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Search className="h-6 w-6" />

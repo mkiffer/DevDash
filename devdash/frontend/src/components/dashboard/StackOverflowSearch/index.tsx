@@ -125,8 +125,8 @@ export const StackOverflowSearch: React.FC = () => {
   }, [query, results]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-none">
+    <div className="flex flex-col overflow-auto-y">
+      <div className="flex-none pt-1 pb-2">
         <SearchBar
           query={query}
           onQueryChange={handleQueryChange}
