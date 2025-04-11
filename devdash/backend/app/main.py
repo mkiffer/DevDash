@@ -3,16 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routes import stack_overflow, chat, hackerrank
 from app.models.base import Base
-from sqlalchemy import create_engine
-from app.core.config import settings
+from app.database.session import engine  # Import the engine from our new module
 from fastapi.responses import JSONResponse
 
 def setup_database():
     """Initialize database on startup if needed"""
-    # Only create tables directly in development
-    if settings.ENVIRONMENT == "development":
-        engine = create_engine(settings.DATABASE_URL)
-        Base.metadata.create_all(engine)
+    # Create all tables
+    Base.metadata.create_all(engine)
 
 def create_application() -> FastAPI:
     application = FastAPI(
@@ -21,19 +18,20 @@ def create_application() -> FastAPI:
     )
 
     # Configure CORS
-# in backend/app/main.py
     application.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  
-        "https://yourdomain.com",  # Your production frontend domain
-        "https://main.d34kkik6298snw.amplifyapp.com" # Your Amplify domain
-        "https://devdash-api-env.e-xhrm98zin3.ap-southeast-2.elasticbeanstalk.com" #devdash domain
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",  
+            "https://yourdomain.com",  # Your production frontend domain
+            "https://main.d34kkik6298snw.amplifyapp.com", # Your Amplify domain
+            "https://devdash-api-env.e-xhrm98zin3.ap-southeast-2.elasticbeanstalk.com", #devdash domain
+            "*"  # Allow all origins during development - REMOVE IN PRODUCTION
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
+    
     # Add a root route to provide API information
     @application.get("/")
     async def root():

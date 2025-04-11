@@ -57,3 +57,42 @@ export interface CodeProblem {
     onSearch: (query: string) => void;
     isLoading?: boolean;
   }
+
+  export interface APIResponse<T = any> {
+    data: T;
+    status: number;
+    message?: string;
+  }
+  
+
+  // Chat session preview for the session list
+  export interface ChatSessionPreview {
+    id: string;
+    created_at: Date;
+    updated_at: Date;
+    preview: string;
+  }
+  
+  // Full chat session with messages
+  export interface ChatSession {
+    id: string;
+    created_at: Date;
+    updated_at: Date;
+    preview: string;
+    messages: ChatMessage[];
+  }
+  
+  // Props for the chat input component
+  export interface ChatInputProps {
+    onSend: (message: string) => void;
+    disabled?: boolean;
+  }
+  
+  // Props for the session list component
+  export interface SessionListProps {
+    sessions: ChatSessionPreview[];
+    activeSessionId: string | null;
+    onSelectSession: (sessionId: string) => void;
+    onCreateSession: () => void;
+    onDeleteSession: (sessionId: string) => void;
+  }
