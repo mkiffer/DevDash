@@ -70,7 +70,7 @@ export const chatService = {
       const data = await apiRequest<any>(
         `/chat/sessions/${sessionId}/messages/`, 
         'POST',
-        {session_id: sessionId, message}
+        {message: message}
       );
       return {
         data: data.data.message,

@@ -191,7 +191,7 @@ export const AIChat: React.FC = () => {
         
         // Set as active session
         setActiveSessionId(newSessionId);
-        
+        console.log("msg content: " + content)
         // Continue with sending the message using the new session ID
         await sendMessageToSession(newSessionId, content);
         return;

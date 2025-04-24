@@ -18,6 +18,9 @@ class ChatMessageModel(BaseModel):
     content: str
     timestamp: Optional[datetime] = None
 
+class MessageContent(BaseModel):
+    message: str
+
 class SessionMessageModel(BaseModel):
     session_id: str
     message: str
@@ -145,7 +148,7 @@ async def get_session(session_id: str, db: DbSession = Depends(get_db)):
 @router.post("/sessions/{session_id}/messages", response_model=APIResponse)
 async def send_message_to_session(
     session_id: str, 
-    message_request: SessionMessageModel, 
+    message_content: MessageContent, 
     db: DbSession = Depends(get_db)
 ):
     try:
@@ -172,7 +175,7 @@ async def send_message_to_session(
         user_message = ChatMessage(
             session_id=session_id,
             role="user",
-            content=message_request.message
+            content=message_content.message
         )
         db.add(user_message)
         db.commit()
@@ -180,7 +183,7 @@ async def send_message_to_session(
         
         # Get AI response
         ai_response = await ai_service.get_response(
-            message_request.message,
+            message_content.message,
             message_history
         )
         

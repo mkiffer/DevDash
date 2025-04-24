@@ -30,7 +30,7 @@ class UserOut(BaseModel):
     email: str
 
 # Register new user
-@router.post("/auth/register", response_model=Token)
+@router.post("/register", response_model=Token)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # Check if user exists
     db_user = db.query(User).filter(User.email == user.email).first()
@@ -61,7 +61,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 # Login endpoint
-@router.post("/auth/token", response_model=Token)
+@router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
