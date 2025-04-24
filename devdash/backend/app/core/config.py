@@ -15,10 +15,17 @@ class Settings(BaseSettings):
         
     ]
     
+
     # Stack Exchange API
-    STACK_EXCHANGE_API_KEY: str
+    STACK_EXCHANGE_API_KEY: str = os.getenv("STACK_EXCHANGE_API_KEY", "")
     STACK_EXCHANGE_BASE_URL: str = "https://api.stackexchange.com/2.3"
     
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "") 
+
+    #auth secret key
+    SECRET_KEY : str ="asjfskdjndkjnfsdjknf!@#$$DFKERewdcwDERGdvdFFVFDDRT#wefsdggh"
+    ACCESS_TOKEN_EXPIRE_MINUTES : int = 30
+
     # Environment settings
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -26,7 +33,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./chat.db")
     
     # API Keys
-    ANTHROPIC_API_KEY: str
     
     
     HACKERRANK_API_KEY: str = "None"
@@ -48,7 +54,7 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings():
     settings = Settings()
-    settings.check_api_key()
+    #settings.check_api_key()
     return settings
 
 settings = get_settings()

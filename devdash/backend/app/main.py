@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import stack_overflow, chat, hackerrank
+from app.routes import stack_overflow, chat, hackerrank, auth
 from app.models.base import Base
 from app.database.session import engine  # Import the engine from our new module
 from fastapi.responses import JSONResponse
+
 
 def setup_database():
     """Initialize database on startup if needed"""
@@ -76,6 +77,12 @@ def create_application() -> FastAPI:
         hackerrank.router,
         prefix=f"{settings.API_V1_STR}/hackerrank",
         tags=["hackerrank"]
+    )
+
+    application.include_router(
+        auth.router,
+        prefix = f"{settings.API_V1_STR}/auth",
+        tags = ["auth"]
     )
 
     return application
