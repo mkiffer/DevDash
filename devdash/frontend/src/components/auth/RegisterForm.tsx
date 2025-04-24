@@ -27,7 +27,7 @@ export const RegisterForm: React.FC = () => {
       return;
     }
     
-    setIsLoading(true);
+    //setIsLoading(true);
     
     try {
       await register(email, username, password);

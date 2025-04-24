@@ -78,7 +78,7 @@ def create_application() -> FastAPI:
         prefix=f"{settings.API_V1_STR}/hackerrank",
         tags=["hackerrank"]
     )
-
+    print("Registering auth router...")
     application.include_router(
         auth.router,
         prefix = f"{settings.API_V1_STR}/auth",
