@@ -57,7 +57,7 @@ export const authService ={
         return response.json();
     },
 
-    async getUSerProfile(): Promise<User>{
+    async getUserProfile(): Promise<User>{
         const token = localStorage.getItem('token');
 
         if(!token){

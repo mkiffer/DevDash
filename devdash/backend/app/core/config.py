@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     # Database settings
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./chat.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # API Keys
     

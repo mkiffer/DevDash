@@ -9,8 +9,10 @@ class ChatSession(Base):
     
 
     id = Column(String, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable = True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
     user = relationship("User", back_populates="sessions")
     messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
 

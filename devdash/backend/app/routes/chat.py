@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session as DbSession
 from app.services.ai_service import AIService
 from app.models.chat import ChatSession, ChatMessage
 from app.database.session import get_db
+from app.models.user import User
+from app.dependencies import get_current_user
 
 router = APIRouter()
 ai_service = AIService()
@@ -69,9 +71,9 @@ async def create_session(db: DbSession = Depends(get_db)):
 
 # List all sessions
 @router.get("/sessions", response_model=APIResponse)
-async def list_sessions(db: DbSession = Depends(get_db)):
+async def list_sessions(user: User = Depends(get_current_user) ,db: DbSession = Depends(get_db)):
     try:
-        sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).all()
+        sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).filter(ChatSession.user_id == user.id).all()
         
         # Create a preview for each session
         session_list = []
@@ -85,6 +87,7 @@ async def list_sessions(db: DbSession = Depends(get_db)):
             
             session_list.append({
                 "id": session.id,
+                "user_id": session.user_id,
                 "created_at": session.created_at,
                 "updated_at": session.updated_at,
                 "preview": preview

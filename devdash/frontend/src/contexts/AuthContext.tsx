@@ -1,5 +1,6 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
 import { API_BASE_URL } from '@/services/apiConfig';
+import {authService} from '@/services/authService'
 
 interface AuthContextType {
     user: User | null;
@@ -59,37 +60,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children})=
         setIsLoading(true);
 
         try{
-            //Create for data (FastAPI expects form data for Oauth2)
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            const response = await fetch(`${API_BASE_URL}/auth/token`, {
-                method: 'POST',
-                body: formData});
-            
-            if(!response.ok){
-                throw new Error('Login failed');
-            }
-            
-            const data = await response.json();
-
-            //store token
+            const data = await authService.login({username, password});
             localStorage.setItem('token', data.access_token);
-            
-            const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${data.access_token}`
-                }
-            });
 
-            if (userResponse.ok){
-                const userData = await userResponse.json();
-                setUser({
-                    username: userData.username,
-                    email: userData.email
-                });
-            }
+            const userData = await authService.getUserProfile();
+            setUser(userData)
             } catch (error){
                 console.error('Login error:', error);
                 throw error;
@@ -105,18 +80,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children})=
         setIsLoading(true);
 
         try{
-            const response = await fetch(`${API_BASE_URL}/auth/register`, {
-                method: 'POST',
-                headers:{
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({email,username,password})
-            });
-            if(!response.ok){
-                throw new Error('Registration failed');
-            }
-
-            const data = await response.json();
+            
+            const data = await authService.register({email,username,password});
 
             //store token
             localStorage.setItem('token', data.access_token);

@@ -12,5 +12,6 @@ class User(Base):
     hashed_password = Column(String, nullable = False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default = datetime.datetime.now)
+    
     sessions = relationship("ChatSession", back_populates = "user")
 
