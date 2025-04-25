@@ -10,9 +10,7 @@ class Settings(BaseSettings):
     # CORS Configuration
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",  # Vite default
-        "http://localhost:3000",# Alternative frontend port
-        
-        
+        "http://localhost:3000", # Alternative frontend port 
     ]
     
 

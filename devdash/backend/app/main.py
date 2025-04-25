@@ -21,13 +21,7 @@ def create_application() -> FastAPI:
     # Configure CORS
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",  
-            "https://yourdomain.com",  # Your production frontend domain
-            "https://main.d34kkik6298snw.amplifyapp.com", # Your Amplify domain
-            "https://devdash-api-env.e-xhrm98zin3.ap-southeast-2.elasticbeanstalk.com", #devdash domain
-            "*"  # Allow all origins during development - REMOVE IN PRODUCTION
-        ],
+        allow_origins= settings.BACKEND_CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
