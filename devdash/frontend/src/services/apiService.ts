@@ -39,8 +39,19 @@ export const apiRequest = async<T>(
         ...customOptions,
     };
 
+    if(!options.headers){
+        options.headers = {};
+    }
+
+    const token = localStorage.getItem('token');
+
+    if(token){
+        (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+
     if(data && ['POST', 'PUT', 'PATCH'].includes(method)){
         options.body = JSON.stringify(data);
+        (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
     }
 
     const fetchOptions = createAuthFetchOptions(options);

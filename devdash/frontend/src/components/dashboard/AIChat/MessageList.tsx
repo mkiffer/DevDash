@@ -1,5 +1,5 @@
 // components/dashboard/AIChat/MessageList.tsx
-import React from 'react';
+import React, { memo } from 'react';
 import { ChatMessage } from '../../../types';
 
 interface MessageListProps {
@@ -7,7 +7,7 @@ interface MessageListProps {
   isLoading?: boolean;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
+export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isLoading }) => {
   console.log('MessageList received messages:', messages); // Debug log
 
   return (
@@ -48,3 +48,5 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading })
     </div>
   );
 };
+
+export const MessageList = memo(MessageListComponent)

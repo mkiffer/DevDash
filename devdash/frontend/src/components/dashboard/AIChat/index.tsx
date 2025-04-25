@@ -22,13 +22,20 @@ export const AIChat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const isInitialMount = useRef(true);
+  const isCreatingSession = useRef(false);
+
 
   // Load sessions when component mounts
   useEffect(() => {
-    loadSessions();
+    console.log("AI chat component mounted");
+    if (isInitialMount.current){
+      isInitialMount.current = false;
+      loadSessions();
+
+    }
+
+    return () => console.log("Chat componenet unmounted?")
   }, []);
 
   // Load messages when active session changes
@@ -41,16 +48,20 @@ export const AIChat: React.FC = () => {
   }, [activeSessionId]);
 
   const loadSessions = async () => {
+    if (isLoading) return;
+
+    console.log('Loading sessions...');
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
+      
       const response = await chatService.listSessions();
       setSessions(response.data);
-      
-      // Select the most recently updated session or create a new one if none exists
-      if (response.data.length > 0) {
+      //only set active session if we dont have one and theres data
+      if (response.data.length > 0 && !activeSessionId) {
         setActiveSessionId(response.data[0].id);
-      } else {
-        handleCreateSession();
+      } else if (response.data.length === 0 && !activeSessionId && !isCreatingSession.current){
+        createInitialSession();
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -61,6 +72,31 @@ export const AIChat: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createInitialSession = async () => {
+    if (isCreatingSession.current) return;
+  
+    isCreatingSession.current = true;
+    try {
+      const response = await chatService.createSession();
+      const newSessionId = response.data.session_id;
+      
+      // Set the ID without triggering loadSessions again
+      setActiveSessionId(newSessionId);
+      
+      // Update the sessions list with the new session
+      setSessions(prev => [{
+        id: newSessionId,
+        created_at: new Date(),
+        updated_at: new Date(),
+        preview: "New conversation"
+      }, ...prev]);
+    } catch (error) {
+      console.error('Error creating session:', error);
+    } finally {
+      isCreatingSession.current = false;
     }
   };
 
@@ -84,13 +120,24 @@ export const AIChat: React.FC = () => {
   };
 
   const handleCreateSession = async () => {
+    if(isLoading || isCreatingSession.current) return;
+
+    isCreatingSession.current = true;
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
       const response = await chatService.createSession();
       const newSessionId = response.data.session_id;
       
-      // Refresh the session list
-      await loadSessions();
+      //First update session list
+      setSessions(prev => [{
+        id: newSessionId,
+        created_at: new Date(),
+        updated_at: new Date(),
+        preview: "New Conversation"
+      }, ...prev]);
+
+      
       
       // Set the new session as active
       setActiveSessionId(newSessionId);
@@ -104,6 +151,7 @@ export const AIChat: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+      isCreatingSession.current = false;
     }
   };
 
