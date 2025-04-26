@@ -90,3 +90,9 @@ For production deployment, you can:
 - `/backend`: FastAPI Python backend
 - `/frontend`: React TypeScript frontend
 - `docker-compose.yml`: Docker services configuration
+
+
+##THINGS TO DO
+1. add programming challenge functionality
+2. add question body to stack overflow search
+3. change chat api to free resource

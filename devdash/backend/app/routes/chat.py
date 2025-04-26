@@ -46,13 +46,13 @@ class ConversationListItem(BaseModel):
 
 # Create a new session
 @router.post("/sessions", response_model=APIResponse)
-async def create_session(db: DbSession = Depends(get_db)):
+async def create_session(user: User = Depends(get_current_user), db: DbSession = Depends(get_db)):
     try:
         # Generate a unique ID for the session
         session_id = str(uuid.uuid4())
         
         # Create a new chat session in the database
-        new_session = ChatSession(id=session_id)
+        new_session = ChatSession(id=session_id, user_id = user.id)
         db.add(new_session)
         db.commit()
         db.refresh(new_session)
@@ -73,7 +73,7 @@ async def create_session(db: DbSession = Depends(get_db)):
 @router.get("/sessions", response_model=APIResponse)
 async def list_sessions(user: User = Depends(get_current_user) ,db: DbSession = Depends(get_db)):
     try:
-        sessions = db.query(ChatSession).order_by(ChatSession.updated_at.desc()).filter(ChatSession.user_id == user.id).all()
+        sessions = db.query(ChatSession).filter(ChatSession.user_id == user.id).order_by(ChatSession.updated_at.desc()).all()
         
         # Create a preview for each session
         session_list = []
@@ -105,9 +105,9 @@ async def list_sessions(user: User = Depends(get_current_user) ,db: DbSession = 
 
 # Get a specific session
 @router.get("/sessions/{session_id}", response_model=APIResponse)
-async def get_session(session_id: str, db: DbSession = Depends(get_db)):
+async def get_session(session_id: str, user: User = Depends(get_current_user), db: DbSession = Depends(get_db)):
     try:
-        session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+        session = db.query(ChatSession).filter(ChatSession.user_id == user.id).filter(ChatSession.id == session_id).first()
         if not session:
             return APIResponse(
                 data={},
@@ -134,6 +134,7 @@ async def get_session(session_id: str, db: DbSession = Depends(get_db)):
             data={
                 "session": {
                     "id": session.id,
+                    "user_id" : session.user_id,
                     "created_at": session.created_at,
                     "updated_at": session.updated_at,
                     "messages": formatted_messages
@@ -152,14 +153,15 @@ async def get_session(session_id: str, db: DbSession = Depends(get_db)):
 async def send_message_to_session(
     session_id: str, 
     message_content: MessageContent, 
+    user: User = Depends(get_current_user),
     db: DbSession = Depends(get_db)
 ):
     try:
         # Check if session exists, create it if it doesn't
-        session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+        session = db.query(ChatSession).filter(ChatSession.user_id == user.id).filter(ChatSession.id == session_id).first()
         if not session:
             # Create the session if it doesn't exist
-            session = ChatSession(id=session_id)
+            session = ChatSession(id=session_id, user_id = user.id)
             db.add(session)
             db.commit()
             db.refresh(session)
@@ -177,6 +179,7 @@ async def send_message_to_session(
         # Add user message to DB
         user_message = ChatMessage(
             session_id=session_id,
+            user_id = user.id,
             role="user",
             content=message_content.message
         )
@@ -193,6 +196,7 @@ async def send_message_to_session(
         # Add AI response to DB
         assistant_message = ChatMessage(
             session_id=session_id,
+            user_id = user.id,
             role="assistant",
             content=ai_response
         )
@@ -224,9 +228,9 @@ async def send_message_to_session(
 
 # Delete a session
 @router.delete("/sessions/{session_id}", response_model=APIResponse)
-async def delete_session(session_id: str, db: DbSession = Depends(get_db)):
+async def delete_session(session_id: str, user: User = Depends(get_current_user), db: DbSession = Depends(get_db)):
     try:
-        session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+        session = db.query(ChatSession).filter(ChatSession.user_id == user.id).filter(ChatSession.id == session_id).first()
         if not session:
             return APIResponse(
                 data={},
@@ -241,63 +245,6 @@ async def delete_session(session_id: str, db: DbSession = Depends(get_db)):
             data={},
             status=200,
             message=f"Session {session_id} deleted successfully"
-        )
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-# For backward compatibility - default session
-@router.post("/", response_model=APIResponse)
-async def send_message(message_request: SessionMessageModel, db: DbSession = Depends(get_db)):
-    try:
-        # Use default session for backward compatibility
-        default_session = db.query(ChatSession).filter(ChatSession.id == "default").first()
-        
-        if not default_session:
-            # Create default session if it doesn't exist
-            default_session = ChatSession(id="default")
-            db.add(default_session)
-            db.commit()
-            db.refresh(default_session)
-        
-        # Reuse the session-specific endpoint
-        return await send_message_to_session(
-            "default", 
-            message_request, 
-            db
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=str(e)
-        )
-
-# For backward compatibility - get history
-@router.get("/history", response_model=APIResponse)
-async def get_chat_history(db: DbSession = Depends(get_db)):
-    try:
-        # Use default session for backward compatibility
-        return await get_session("default", db)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-# For backward compatibility - clear history
-@router.post("/clear", response_model=APIResponse)
-async def clear_chat_history(db: DbSession = Depends(get_db)):
-    try:
-        # Delete all messages in the default session
-        db.query(ChatMessage).filter(ChatMessage.session_id == "default").delete()
-        db.commit()
-        
-        return APIResponse(
-            data={"message": "Chat history cleared"},
-            status=200
         )
     except Exception as e:
         db.rollback()

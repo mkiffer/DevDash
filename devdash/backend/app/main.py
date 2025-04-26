@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import stack_overflow, chat, hackerrank, auth
+from app.routes import stack_overflow, chat, hackerrank, auth, coding_problems
 from app.models.base import Base
 from app.database.session import engine  # Import the engine from our new module
 from fastapi.responses import JSONResponse
@@ -77,6 +77,12 @@ def create_application() -> FastAPI:
         auth.router,
         prefix = f"{settings.API_V1_STR}/auth",
         tags = ["auth"]
+    )
+
+    application.include_router(
+        coding_problems.router,
+        prefix = f"{settings.API_V1_STR}/coding",
+        tags = ["coding"]
     )
 
     return application

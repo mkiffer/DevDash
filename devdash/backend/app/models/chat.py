@@ -21,8 +21,10 @@ class ChatMessage(Base):
     
     id = Column(Integer, primary_key=True)
     session_id = Column(String, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     role = Column(String, nullable=False)  # 'user' or 'assistant'
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     
+    user = relationship("User")
     session = relationship("ChatSession", back_populates="messages")
