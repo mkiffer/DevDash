@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Code, SidebarClose, SidebarOpen } from 'lucide-react';
-import { hackerRankService, HackerRankChallenge, HackerRankSubmission } from '@/services/hackerRankService';
+import { SubmissionResult, CodingProblem, codingProblemService } from '@/services/codingProblemService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
 // Import subcomponents
-import ChallengeToolbar from '@/components/dashboard/HackerRank/ChallengeToolbar';
-import ChallengeList from '@/components/dashboard/HackerRank/ChallengeList';
-import ChallengeDetails from '@/components/dashboard//HackerRank/ChallengeDetails';
-import SolutionEditor from '@/components/dashboard//HackerRank/SolutionEditor';
-import SubmissionResults from '@/components/dashboard/HackerRank/SubmissionResults';
+import ChallengeToolbar from '@/components/dashboard/CodingChallenges/ChallengeToolbar';
+import ChallengeList from '@/components/dashboard/CodingChallenges/ChallengeList';
+import ChallengeDetails from '@/components/dashboard/CodingChallenges/ChallengeDetails';
+import SolutionEditor from '@/components/dashboard/CodingChallenges/SolutionEditor';
+import SubmissionResults from '@/components/dashboard/CodingChallenges/SubmissionResults';
 
 // Import utilities
-import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/HackerRank/HackerRankUtils';
+import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
 
 export const HackerRankProblems: React.FC = () => {
   // State management
-  const [challenges, setChallenges] = useState<HackerRankChallenge[]>([]);
-  const [currentChallenge, setCurrentChallenge] = useState<HackerRankChallenge | null>(null);
+  const [challenges, setChallenges] = useState<CodingProblem[]>([]);
+  const [currentChallenge, setCurrentChallenge] = useState<CodingProblem | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
   const [code, setCode] = useState<string>('// Write your solution here');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [submissionResult, setSubmissionResult] = useState<HackerRankSubmission | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [activeTab, setActiveTab] = useState<string>('problem');
   const { toast } = useToast();
   const [isChallengeListVisible, setIsChallengeListVisible] = useState<boolean>(true)
@@ -39,9 +39,7 @@ export const HackerRankProblems: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await hackerRankService.getChallenges(
-        1, 
-        10, 
+      const response = await codingProblemService.getProblems(
         selectedDifficulty || undefined
       );
       
@@ -70,11 +68,11 @@ export const HackerRankProblems: React.FC = () => {
     setActiveTab('problem'); // Switch to problem tab when loading a new challenge
     
     try {
-      const response = await hackerRankService.getChallenge(slug);
+      const response = await codingProblemService.getProblem(slug);
       setCurrentChallenge(response.data);
       
       // Set default code based on selected language and challenge
-      const starterCode = getStarterCode(selectedLanguage, response.data.name);
+      const starterCode = getStarterCode(selectedLanguage, response.data.title);
       setCode(starterCode);
     } catch (error) {
       console.error('Error loading challenge:', error);
@@ -92,7 +90,7 @@ export const HackerRankProblems: React.FC = () => {
   const handleLanguageChange = (value: string) => {
     setSelectedLanguage(value);
     if (currentChallenge) {
-      setCode(getStarterCode(value, currentChallenge.name));
+      setCode(getStarterCode(value, currentChallenge.title));
     } else {
       setCode(getStarterCode(value));
     }
@@ -107,7 +105,7 @@ export const HackerRankProblems: React.FC = () => {
     
     try {
       // Submit the solution
-      const submitResponse = await hackerRankService.submitSolution(
+      const submitResponse = await codingProblemService.submitSolution(
         currentChallenge.slug,
         code,
         selectedLanguage
@@ -116,18 +114,15 @@ export const HackerRankProblems: React.FC = () => {
       // Wait a moment for processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Get the submission result
-      const resultResponse = await hackerRankService.getSubmissionResult(
-        submitResponse.data.id
-      );
       
-      setSubmissionResult(resultResponse.data);
+      
+      setSubmissionResult(submitResponse.data);
       setActiveTab('results'); // Switch to results tab
       
-      if (resultResponse.data.status === 'Accepted') {
+      if (submitResponse.data.status === 'Accepted') {
         toast({
           title: 'Success!',
-          description: `Your solution passed all test cases. Score: ${resultResponse.data.score}/${currentChallenge.max_score}`,
+          description: `Your solution passed all test cases. Score: ${submitResponse.data.score}`,
         });
       } else {
         toast({
@@ -247,8 +242,7 @@ export const HackerRankProblems: React.FC = () => {
               {activeTab === 'results' && submissionResult && (
                 <TabsContent value="results" className="h-full overflow-auto">
                   <SubmissionResults 
-                    result={submissionResult} 
-                    maxScore={currentChallenge.max_score}
+                    result={submissionResult}
                   />
                 </TabsContent>
               )}

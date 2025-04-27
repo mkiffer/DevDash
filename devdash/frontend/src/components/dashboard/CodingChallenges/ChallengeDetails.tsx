@@ -1,11 +1,11 @@
 // components/dashboard/HackerRank/ChallengeDetails.tsx
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { HackerRankChallenge } from '@/services/hackerRankService';
 import ReactMarkdown from 'react-markdown';
+import { CodingProblem } from '@/services/codingProblemService';
 
 interface ChallengeDetailsProps {
-  challenge: HackerRankChallenge;
+  challenge: CodingProblem;
 }
 
 const difficultyColorMap = {
@@ -32,7 +32,7 @@ const ChallengeDetails: React.FC<ChallengeDetailsProps> = ({ challenge }) => {
     return (
     <div className="space-y-4 overflow-auto">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">{challenge.name}</h2>
+        <h2 className="text-xl font-bold">{challenge.title}</h2>
         <Badge 
           className={colorClass}
         >
@@ -41,14 +41,14 @@ const ChallengeDetails: React.FC<ChallengeDetailsProps> = ({ challenge }) => {
       </div>
       
       <div className="prose prose-sm max-w-none">
-        <ReactMarkdown>{challenge.body}</ReactMarkdown>
+        <ReactMarkdown>{challenge.description}</ReactMarkdown>
       </div>
       
-      {challenge.testcases && challenge.testcases.length > 0 && (
+      {challenge.example_cases && challenge.example_cases.length > 0 && (
         <div className="mt-4">
           <h3 className="font-semibold mb-2">Sample Test Cases:</h3>
           <div className="space-y-3">
-            {challenge.testcases.map((testcase, index) => (
+            {challenge.example_cases.map((testcase, index) => (
               <div key={index} className="bg-gray-50 p-3 rounded-md">
                 <div className="mb-1">
                   <span className="font-medium text-xs">Input: </span>

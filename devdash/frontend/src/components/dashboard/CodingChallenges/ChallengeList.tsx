@@ -1,11 +1,11 @@
 // components/dashboard/HackerRank/ChallengeList.tsx
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { HackerRankChallenge } from '@/services/hackerRankService';
+import { CodingProblem } from '@/services/codingProblemService';
 
 interface ChallengeListProps {
-  challenges: HackerRankChallenge[];
-  currentChallengeId: string | null;
+  challenges: CodingProblem[];
+  currentChallengeId: number | null;
   isLoading: boolean;
   onSelectChallenge: (slug: string) => void;
 }
@@ -49,7 +49,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
             onClick={() => onSelectChallenge(challenge.slug)}
           >
             <div className="flex justify-between items-start">
-              <h4 className="font-medium line-clamp-1">{challenge.name}</h4>
+              <h4 className="font-medium line-clamp-1">{challenge.title}</h4>
               <Badge 
                 className={getColorClass(challenge.difficulty)}
               >
@@ -57,7 +57,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
               </Badge>
             </div>
             <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-              {challenge.preview}
+              {challenge.description.slice(0,20)}
             </p>
           </div>
         ))}
