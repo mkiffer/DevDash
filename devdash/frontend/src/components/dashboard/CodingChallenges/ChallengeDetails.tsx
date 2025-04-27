@@ -53,13 +53,13 @@ const ChallengeDetails: React.FC<ChallengeDetailsProps> = ({ challenge }) => {
                 <div className="mb-1">
                   <span className="font-medium text-xs">Input: </span>
                   <pre className="text-sm bg-gray-100 p-2 rounded overflow-x-auto">
-                    {testcase.input}
+                    {JSON.stringify(testcase.input,null,2)}
                   </pre>
                 </div>
                 <div>
                   <span className="font-medium text-xs">Expected Output: </span>
                   <pre className="text-sm bg-gray-100 p-2 rounded overflow-x-auto">
-                    {testcase.output}
+                    {JSON.stringify(testcase.output,null,2)}
                   </pre>
                 </div>
               </div>

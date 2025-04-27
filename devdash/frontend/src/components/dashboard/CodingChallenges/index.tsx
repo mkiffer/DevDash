@@ -15,12 +15,12 @@ import SubmissionResults from '@/components/dashboard/CodingChallenges/Submissio
 // Import utilities
 import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
 
-export const HackerRankProblems: React.FC = () => {
+export const CodingProblemComponent: React.FC = () => {
   // State management
   const [challenges, setChallenges] = useState<CodingProblem[]>([]);
   const [currentChallenge, setCurrentChallenge] = useState<CodingProblem | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('any');
   const [code, setCode] = useState<string>('// Write your solution here');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);

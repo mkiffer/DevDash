@@ -15,7 +15,7 @@ router = APIRouter()
 JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
 JUDGE0_API_KEY = os.getenv("JUDGE0_API_KEY")
 
-@router.get("/problems", response_model=List[dict])
+@router.get("/problems?difficulty={difficulty}", response_model=List[dict])
 async def get_problems(
     difficulty: Optional[str] = None,
     db: Session = Depends(get_db)

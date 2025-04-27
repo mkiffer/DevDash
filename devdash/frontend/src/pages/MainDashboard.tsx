@@ -4,7 +4,7 @@ import { Code2, MessageSquare, Search, Award } from 'lucide-react';
 import { CodePlayground } from '../components/dashboard/CodePlayground';
 import { AIChat } from '../components/dashboard/AIChat';
 import { StackOverflowSearch } from '../components/dashboard/StackOverflowSearch';
-import { HackerRankProblems } from '../components/dashboard/CodingChallenges/index'
+import { CodingProblemComponent } from '../components/dashboard/CodingChallenges/index'
 
 const DashboardLayout: React.FC = () => {
   return (
@@ -58,7 +58,7 @@ const DashboardLayout: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
-              <HackerRankProblems />
+              <CodingProblemComponent />
             </CardContent>
           </Card>
         </div>
