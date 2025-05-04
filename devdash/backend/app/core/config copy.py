@@ -1,16 +1,11 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
-print(f"Raw os.getenv('JUDGE0_API_KEY'): '{os.getenv('JUDGE0_API_KEY')}'")
+
 from dotenv import load_dotenv
 
 load_dotenv()
-print(f"After load_dotenv, os.getenv('JUDGE0_API_KEY'): '{os.getenv('JUDGE0_API_KEY')}'")
-for key in os.environ:
-    if 'JUDGE' in key.upper():
-        print(f"Found environment variable: {key} = {os.environ[key]}")
-    else:
-        print(f"Found other environment variable: {key} = {os.environ[key]}")
+
 class Settings(BaseSettings):
     # API Configurations
     API_V1_STR: str = "/api/v1"
@@ -24,10 +19,10 @@ class Settings(BaseSettings):
     
 
     # Stack Exchange API
-    STACK_EXCHANGE_API_KEY: str = ""
+    STACK_EXCHANGE_API_KEY: str = os.getenv("STACK_EXCHANGE_API_KEY", "")
     STACK_EXCHANGE_BASE_URL: str = "https://api.stackexchange.com/2.3"
     
-    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "") 
 
     #auth secret key
     SECRET_KEY : str ="asjfskdjndkjnfsdjknf!@#$$DFKERewdcwDERGdvdFFVFDDRT#wefsdggh"
@@ -37,10 +32,10 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     # Database settings
-    DATABASE_URL: str = ""
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # API Keys
-    JUDGE0_API_KEY : str = ""
+    JUDGE0_API_KEY : str = os.getenv("JUDGE0_API_KEY")
     
     HACKERRANK_API_KEY: str = "None"
     HACKERRANK_API_URL: str = "https://www.hackerrank.com/api/v3"
@@ -62,10 +57,6 @@ class Settings(BaseSettings):
 def get_settings():
     settings = Settings()
     #settings.check_api_key()
-    print(f"DEBUG - All API Keys:")
-    print(f"JUDGE0_API_KEY: '{settings.JUDGE0_API_KEY}'")
-    print(f"ANTHROPIC_API_KEY: '{settings.ANTHROPIC_API_KEY}'")
-    print(f"STACK_EXCHANGE_API_KEY: '{settings.STACK_EXCHANGE_API_KEY}'")
     return settings
 
 settings = get_settings()
