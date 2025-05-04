@@ -35,5 +35,4 @@ class AIService:
             return response.content[0].text
 
         except Exception as e:
-            print(f"Error in AI service: {str(e)}")
             raise e

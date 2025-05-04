@@ -26,7 +26,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting search with query:', inputValue); // Debug log
     
     // Only trigger search if there's actual input
     if (inputValue.trim()) {

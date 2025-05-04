@@ -28,14 +28,11 @@ export const AIChat: React.FC = () => {
 
   // Load sessions when component mounts
   useEffect(() => {
-    console.log("AI chat component mounted");
     if (isInitialMount.current){
       isInitialMount.current = false;
       loadSessions();
 
     }
-
-    return () => console.log("Chat componenet unmounted?")
   }, []);
 
   // Load messages when active session changes
@@ -50,7 +47,6 @@ export const AIChat: React.FC = () => {
   const loadSessions = async () => {
     if (isLoading) return;
 
-    console.log('Loading sessions...');
     setIsLoading(true);
 
     try {
@@ -239,7 +235,6 @@ export const AIChat: React.FC = () => {
         
         // Set as active session
         setActiveSessionId(newSessionId);
-        console.log("msg content: " + content)
         // Continue with sending the message using the new session ID
         await sendMessageToSession(newSessionId, content);
         return;

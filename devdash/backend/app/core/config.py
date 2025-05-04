@@ -1,16 +1,9 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
-print(f"Raw os.getenv('JUDGE0_API_KEY'): '{os.getenv('JUDGE0_API_KEY')}'")
 from dotenv import load_dotenv
 
 load_dotenv()
-print(f"After load_dotenv, os.getenv('JUDGE0_API_KEY'): '{os.getenv('JUDGE0_API_KEY')}'")
-for key in os.environ:
-    if 'JUDGE' in key.upper():
-        print(f"Found environment variable: {key} = {os.environ[key]}")
-    else:
-        print(f"Found other environment variable: {key} = {os.environ[key]}")
 class Settings(BaseSettings):
     # API Configurations
     API_V1_STR: str = "/api/v1"
@@ -62,10 +55,6 @@ class Settings(BaseSettings):
 def get_settings():
     settings = Settings()
     #settings.check_api_key()
-    print(f"DEBUG - All API Keys:")
-    print(f"JUDGE0_API_KEY: '{settings.JUDGE0_API_KEY}'")
-    print(f"ANTHROPIC_API_KEY: '{settings.ANTHROPIC_API_KEY}'")
-    print(f"STACK_EXCHANGE_API_KEY: '{settings.STACK_EXCHANGE_API_KEY}'")
     return settings
 
 settings = get_settings()

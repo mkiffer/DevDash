@@ -29,6 +29,7 @@ services:
       - DATABASE_URL=postgresql://devdash:devdash_password@db:5432/devdash
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - STACK_EXCHANGE_API_KEY=${STACK_EXCHANGE_API_KEY}
+      - JUDGE0_API_KEY=${JUDGE0_API_KEY}
       - ENVIRONMENT=development
       - DEBUG=true
     depends_on:

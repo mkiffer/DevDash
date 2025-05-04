@@ -46,7 +46,6 @@ def export_sqlite_to_postgres():
     sqlite_conn.close()
     postgres_conn.close()
     
-    print(f"Data export complete. Exported {len(sessions)} sessions and {len(messages)} messages.")
 
 if __name__ == "__main__":
     export_sqlite_to_postgres()

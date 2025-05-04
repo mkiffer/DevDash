@@ -9,7 +9,6 @@ export const chatService = {
     try {
       
       const data = await apiRequest<any>('/chat/sessions', 'POST');
-      console.log('Session created successfully:', data);
       
       return {
         data: data.data,

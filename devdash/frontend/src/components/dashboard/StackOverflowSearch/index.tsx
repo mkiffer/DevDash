@@ -67,12 +67,10 @@ export const StackOverflowSearch: React.FC = () => {
   }, []);
 
   const handleQueryChange = (newQuery: string) => {
-    console.log('Query changed to:', newQuery); // Debug log
     setQuery(newQuery);
   };
 
   const handleSearch = async () => {
-    console.log('Handling search with query:', query); // Debug log
     
     if (!query.trim()) {
       toast({
@@ -85,9 +83,7 @@ export const StackOverflowSearch: React.FC = () => {
 
     setIsLoading(true);
     try {
-      console.log('Making search request...'); // Debug log
       const data = await searchStackOverflow(query);
-      console.log('Search results:', data); // Debug log
       setResults(data.items);
     } catch (error) {
       console.error('Search error:', error);
@@ -120,8 +116,6 @@ export const StackOverflowSearch: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('Current query:', query);
-    console.log('Current results:', results);
   }, [query, results]);
 
   return (

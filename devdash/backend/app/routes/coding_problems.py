@@ -15,7 +15,6 @@ router = APIRouter()
 #judge 0 api config
 JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
 JUDGE0_API_KEY = settings.JUDGE0_API_KEY
-print(f"JUDGE0_API_KEY: {settings.JUDGE0_API_KEY}")
 
 
 
@@ -67,7 +66,6 @@ async def get_problem(slug: str, db: Session = Depends(get_db)):
 async def submit_solution(
     slug:str, submission: dict, db:Session = Depends(get_db)
 ):
-    print(f"JUDGE0_API_KEY: {settings.JUDGE0_API_KEY}")
     
     '''submit solution for evaluation'''
     #1. get the problem

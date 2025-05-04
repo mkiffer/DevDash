@@ -8,7 +8,6 @@ interface MessageListProps {
 }
 
 export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isLoading }) => {
-  console.log('MessageList received messages:', messages); // Debug log
 
   return (
     <div className="flex-1 overflow-y-auto space-y-4 p-4">
