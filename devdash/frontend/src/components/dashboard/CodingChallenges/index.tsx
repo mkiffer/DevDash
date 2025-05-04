@@ -19,8 +19,8 @@ export const CodingProblemComponent: React.FC = () => {
   // State management
   const [challenges, setChallenges] = useState<CodingProblem[]>([]);
   const [currentChallenge, setCurrentChallenge] = useState<CodingProblem | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('any');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('python');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
   const [code, setCode] = useState<string>('// Write your solution here');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);

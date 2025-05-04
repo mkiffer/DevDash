@@ -49,10 +49,13 @@ export const codingProblemService = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const responseData = await response.json();
+
+            //handle response formats
+            const problemsArray = responseData.data || responseData;
 
             return {
-                data, 
+                data: problemsArray, 
                 status: response.status
 
             };

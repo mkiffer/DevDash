@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict
 import json
 from httpx import AsyncClient
 import os
@@ -15,7 +15,7 @@ router = APIRouter()
 JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
 JUDGE0_API_KEY = os.getenv("JUDGE0_API_KEY")
 
-@router.get("/problems?difficulty={difficulty}", response_model=List[dict])
+@router.get("/problems", response_model=Dict[str,List[dict]])
 async def get_problems(
     difficulty: Optional[str] = None,
     db: Session = Depends(get_db)
@@ -27,8 +27,8 @@ async def get_problems(
         query = query.filter(CodingProblem.difficulty == difficulty)
 
     problems = query.all()
-    #list interpolation in return statement
-    return [
+    #list comprehension in return statement
+    return {"data":[
         {
            "id": problem.id,
             "title": problem.title,
@@ -38,6 +38,7 @@ async def get_problems(
             "example_cases": problem.example_cases 
         } for problem in problems
     ]
+    }
 
 @router.get("/problems/{slug}", response_model=dict)
 async def get_problem(slug: str, db: Session = Depends(get_db)):
@@ -128,6 +129,7 @@ async def submit_solution(
     # Print results as JSON for parsing
     print(json.dumps(results))
     """
+    
     else:
         #add similar test runners for other languages
         pass
@@ -139,8 +141,8 @@ async def submit_solution(
         "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
     }
     payload = {
-        "source_code": test_runner,
         "language_id": language_ids[language],
+        "source_code": test_runner,
         "stdin": "",
         "expected_output": ""
     }
@@ -215,4 +217,5 @@ async def submit_solution(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing submission: {str(e)}")
+    
     
