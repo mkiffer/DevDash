@@ -72,7 +72,7 @@ export const CodingProblemComponent: React.FC = () => {
       setCurrentChallenge(response.data);
       
       // Set default code based on selected language and challenge
-      const starterCode = getStarterCode(selectedLanguage, response.data.title);
+      const starterCode = getStarterCode(selectedLanguage, response.data.title, response.data.example_input);
       setCode(starterCode);
     } catch (error) {
       console.error('Error loading challenge:', error);

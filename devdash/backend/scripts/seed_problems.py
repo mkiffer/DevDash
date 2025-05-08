@@ -65,7 +65,8 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
             "javascript": "function solution(nums, target) {\n    // Your code here\n}",
             "java": "class Solution {\n    public int[] solution(int[] nums, int target) {\n        // Your code here\n        return new int[]{0, 0};\n    }\n}",
             "cpp": "std::vector<int> solution(std::vector<int>& nums, int target) {\n    // Your code here\n    return {};\n}"
-        }
+        },
+        "example_input": "nums"
     },
     
     {
@@ -82,7 +83,7 @@ An input string is valid if:
 
 Example:
 Input: s = "()[]{}"
-Output: true
+Output: True
 """,
         "example_cases": [
             {
@@ -141,7 +142,9 @@ Output: true
             "javascript": "function solution(s) {\n    // Your code here\n}",
             "java": "class Solution {\n    public boolean solution(String s) {\n        // Your code here\n        return false;\n    }\n}",
             "cpp": "bool solution(std::string s) {\n    // Your code here\n    return false;\n}"
-        }
+        },
+        "example_input" : "s"
+
     },
     
     {
@@ -194,7 +197,9 @@ Output: [5,4,3,2,1]
             "javascript": "function solution(head) {\n    // Input is an array representation of a linked list\n    // Your code should reverse this list\n    // Return the reversed list as an array\n}",
             "java": "class Solution {\n    public int[] solution(int[] head) {\n        // Input is an array representation of a linked list\n        // Your code should reverse this list\n        // Return the reversed list as an array\n        return new int[]{};\n    }\n}",
             "cpp": "std::vector<int> solution(std::vector<int>& head) {\n    // Input is an array representation of a linked list\n    // Your code should reverse this list\n    // Return the reversed list as an array\n    return {};\n}"
-        }
+        },
+        "example_input" : "head"
+
     },
     
     {
@@ -260,7 +265,9 @@ Explanation: [4,-1,2,1] has the largest sum = 6.
             "javascript": "function solution(nums) {\n    // Your code here\n}",
             "java": "class Solution {\n    public int solution(int[] nums) {\n        // Your code here\n        return 0;\n    }\n}",
             "cpp": "int solution(std::vector<int>& nums) {\n    // Your code here\n    return 0;\n}"
-        }
+        },
+        "example_input" : "nums"
+
     },
     
     {
@@ -320,7 +327,8 @@ Explanation: Since intervals [1,3] and [2,6] overlap, merge them into [1,6].
             "javascript": "function solution(intervals) {\n    // Your code here\n}",
             "java": "class Solution {\n    public int[][] solution(int[][] intervals) {\n        // Your code here\n        return new int[][]{};\n    }\n}",
             "cpp": "std::vector<std::vector<int>> solution(std::vector<std::vector<int>>& intervals) {\n    // Your code here\n    return {};\n}"
-        }
+        },
+        "example_input" : "intervals"
     },
     
     {
@@ -386,7 +394,9 @@ Explanation: 9 exists in nums and its index is 4
             "javascript": "function solution(nums, target) {\n    // Your code here\n}",
             "java": "class Solution {\n    public int solution(int[] nums, int target) {\n        // Your code here\n        return -1;\n    }\n}",
             "cpp": "int solution(std::vector<int>& nums, int target) {\n    // Your code here\n    return -1;\n}"
-        }
+        },
+        "example_input" : "nums"
+
     },
     
     {
@@ -452,7 +462,8 @@ Explanation: "aba" is also a valid answer.
             "javascript": "function solution(s) {\n    // Your code here\n}",
             "java": "class Solution {\n    public String solution(String s) {\n        // Your code here\n        return \"\";\n    }\n}",
             "cpp": "std::string solution(std::string s) {\n    // Your code here\n    return \"\";\n}"
-        }
+        },
+        "example_input": "s"
     },
     
     {
@@ -516,7 +527,8 @@ Explanation: The elevation map is shown above. In this case, 6 units of rain wat
             "javascript": "function solution(height) {\n    // Your code here\n}",
             "java": "class Solution {\n    public int solution(int[] height) {\n        // Your code here\n        return 0;\n    }\n}",
             "cpp": "int solution(std::vector<int>& height) {\n    // Your code here\n    return 0;\n}"
-        }
+        },
+        "example_input" : "height"
     },
     
     {
@@ -530,7 +542,7 @@ Note that the same word in the dictionary may be reused multiple times in the se
 
 Example:
 Input: s = "leetcode", wordDict = ["leet","code"]
-Output: true
+Output: True
 Explanation: Return true because "leetcode" can be segmented as "leet code".
 """,
         "example_cases": [
@@ -583,7 +595,8 @@ Explanation: Return true because "leetcode" can be segmented as "leet code".
             "javascript": "function solution(s, wordDict) {\n    // Your code here\n}",
             "java": "class Solution {\n    public boolean solution(String s, List<String> wordDict) {\n        // Your code here\n        return false;\n    }\n}",
             "cpp": "bool solution(std::string s, std::vector<std::string>& wordDict) {\n    // Your code here\n    return false;\n}"
-        }
+        },
+        "example_input" : "s"
     },
     
     {
@@ -649,7 +662,9 @@ Explanation: The median is 2.0
             "javascript": "function solution(nums1, nums2) {\n    // Your code here\n}",
             "java": "class Solution {\n    public double solution(int[] nums1, int[] nums2) {\n        // Your code here\n        return 0.0;\n    }\n}",
             "cpp": "double solution(std::vector<int>& nums1, std::vector<int>& nums2) {\n    // Your code here\n    return 0.0;\n}"
-        }
+        },
+        "example_input" : "nums1, nums2"
+
     }
 ]
 

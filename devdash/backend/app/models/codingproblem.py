@@ -12,3 +12,4 @@ class CodingProblem(Base):
     example_cases = Column(JSON, nullable=False) #store visible examples
     test_cases = Column(JSON, nullable=False)
     starter_code = Column(JSON, nullable=False) #store different languages
+    example_input = Column(Text)

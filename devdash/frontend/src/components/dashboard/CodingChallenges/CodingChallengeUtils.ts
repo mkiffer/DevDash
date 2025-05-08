@@ -3,16 +3,17 @@
 /**
  * Get starter code based on selected language
  */
-export const getStarterCode = (language: string, challengeName?: string): string => {
+export const getStarterCode = (language: string, challengeName?: string, exampleInput?:string): string => {
     const functionName = challengeName 
       ? challengeName.toLowerCase().replace(/[^a-z0-9]/g, '_')
       : 'solution';
+    const Input = exampleInput ? exampleInput : 'input'
     
     switch (language) {
       case 'javascript':
         return `// Write your solution for ${challengeName || 'this challenge'}\nfunction ${functionName}(input) {\n  // Your code here\n}\n`;
       case 'python':
-        return `# Write your solution for ${challengeName || 'this challenge'}\ndef ${functionName}(input):\n    # Your code here\n    pass\n`;
+        return `# Write your solution for ${challengeName || 'this challenge'}\ndef ${functionName}(${Input}):\n    # Your code here\n    pass\n`;
       case 'java':
         return `// Write your solution for ${challengeName || 'this challenge'}\npublic class Solution {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}\n`;
       case 'cpp':

@@ -59,7 +59,8 @@ async def get_problem(slug: str, db: Session = Depends(get_db)):
         "difficulty": problem.difficulty,
         "description": problem.description,
         "example_cases": problem.example_cases,
-        "starter_code": problem.starter_code
+        "starter_code": problem.starter_code,
+        "example_input": problem.example_input
     }
 
 @router.post("/problems/{slug}/submit", response_model=dict)
@@ -95,45 +96,47 @@ async def submit_solution(
     # Simple example for Python (you'd need different wrappers for each language)
 
     if language == "python":
+        test_cases = json.dumps(problem.test_cases).replace('true', 'True').replace('false', 'False')
         test_runner = f"""
-    # User submitted code
-    {user_code}
+# User submitted code
+{user_code}
 
-    # Test runner
-    import json
+# Test runner
+import json
 
-    test_cases = {json.dumps(problem.test_cases)}
-    results = []
+test_cases = {test_cases}
+results = []
 
-    for i, test in enumerate(test_cases):
-        try:
-            input_data = test["input"]
-            expected = test["output"]
+for i, test in enumerate(test_cases):
+    try:
+        input_data = test["input"]
+        expected = test["output"]
+        
             
-            # Call the user's function with the input
-            actual = solution(**input_data)
+        # Call the user's function with the input
+        actual = {str(problem.title).lower().replace(" ", '_')}(**input_data)
+         
+        # Check if actual matches expected
+        passed = actual == expected
             
-            # Check if actual matches expected
-            passed = actual == expected
-            
-            results.append({{
-                "test_case": i + 1,
-                "passed": passed,
-                "input": input_data,
-                "expected": expected,
-                "actual": actual
-            }})
-        except Exception as e:
-            results.append({{
-                "test_case": i + 1,
-                "passed": False,
-                "input": input_data,
-                "error": str(e)
-            }})
+        results.append({{
+            "test_case": i + 1,
+            "passed": passed,
+            "input": input_data,
+            "expected": expected,
+            "actual": actual
+        }})
+    except Exception as e:
+        results.append({{
+            "test_case": i + 1,
+            "passed": False,
+            "input": input_data,
+            "error": str(e)
+        }})
 
-    # Print results as JSON for parsing
-    print(json.dumps(results))
-    """
+# Print results as JSON for parsing
+print(json.dumps(results))
+"""
     
     else:
         #add similar test runners for other languages
@@ -151,6 +154,8 @@ async def submit_solution(
         "stdin": "",
         "expected_output": ""
     }
+
+    print(f"payload: {payload}")
 
     try:
         #create submission
@@ -188,9 +193,10 @@ async def submit_solution(
                 raise HTTPException(status_code=500, detail = "Judge0 API error")
 
             result = status_response.json()
-
+            print(f"result: {result}")
             #check for compiler errors
             if result.get("status", {}).get("id") in [6,11,12,13]:
+                print(f'status: {result.get("status", {}).get("id")}')
                 return{
                     "status": "Error",
                     "compile_output": result.get("compile_output"),

@@ -12,6 +12,7 @@ export interface CodingProblem {
     output: any;
   }>;
   starter_code?: Record<string, string>;
+  example_input?:string
 }
 
 export interface SubmissionResult {
