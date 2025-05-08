@@ -203,3 +203,5 @@ yarn-error.log*
 # Temporary files
 .tmp/
 .qodo
+
+docker-compose.yml
