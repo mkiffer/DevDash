@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Code2, MessageSquare, Search, Award } from 'lucide-react';
-import { CodePlayground } from '../components/dashboard/CodePlayground';
 import { AIChat } from '../components/dashboard/AIChat';
 import { StackOverflowSearch } from '../components/dashboard/StackOverflowSearch';
 import { CodingProblemComponent } from '../components/dashboard/CodingChallenges/index'

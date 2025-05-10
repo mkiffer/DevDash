@@ -93,6 +93,6 @@ For production deployment, you can:
 
 
 ##THINGS TO DO
-1. add programming challenge functionality
+1. add a better ux for writing solutions to coding problems
 2. add question body to stack overflow search
 3. change chat api to free resource
