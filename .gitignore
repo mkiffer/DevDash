@@ -204,4 +204,4 @@ yarn-error.log*
 .tmp/
 .qodo
 
-docker-compose.yml
+*.yml
