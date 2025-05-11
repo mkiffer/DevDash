@@ -11,6 +11,7 @@ interface SolutionEditorProps {
   onChange: (code: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  isDarkMode: boolean;
 }
 
 
@@ -19,7 +20,8 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
   language,
   onChange,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  isDarkMode
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -35,7 +37,7 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           code={code}
           onChange={onChange}
           language={language}
-          theme="vs-dark"  // Try this theme!
+          isDarkMode={isDarkMode}  // Try this theme!
           options={{
             minimap: { enabled: false },  // Disable minimap for small screens
             fontSize: 14,
@@ -49,7 +51,7 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
         <Button 
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2"
+          className="w-full flex items-center justify-center gap-2 dark:bg-gray-800 dark:text-white"
         >
           {isSubmitting ? (
             <>

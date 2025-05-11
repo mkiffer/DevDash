@@ -29,7 +29,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
         onChange={(e) => setInput(e.target.value)}
         onKeyPress={handleKeyPress}
         placeholder="Type your message..."
-        className="flex-1 resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex-1 resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
         rows={1}
         disabled={disabled}
       />

@@ -20,7 +20,7 @@ export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isL
             className={`max-w-[80%] px-4 py-2 rounded-lg ${
               message.role === 'user'
                 ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-900'
+                : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
             }`}
           >
             <p className="text-sm whitespace-pre-wrap">{message.content}</p>

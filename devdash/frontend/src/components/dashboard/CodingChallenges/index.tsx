@@ -16,7 +16,11 @@ import SubmissionResults from '@/components/dashboard/CodingChallenges/Submissio
 import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
 import { CodeEditor } from './CodeEditor/CodeEditor';
 
-export const CodingProblemComponent: React.FC = () => {
+export interface CodingProblemComponentProps {
+  isDarkMode:boolean;
+}
+
+export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({isDarkMode}) => {
   // State management
   const [challenges, setChallenges] = useState<CodingProblem[]>([]);
   const [currentChallenge, setCurrentChallenge] = useState<CodingProblem | null>(null);
@@ -28,7 +32,7 @@ export const CodingProblemComponent: React.FC = () => {
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [activeTab, setActiveTab] = useState<string>('problem');
   const { toast } = useToast();
-  const [isChallengeListVisible, setIsChallengeListVisible] = useState<boolean>(true)
+  const [isChallengeListVisible, setIsChallengeListVisible] = useState<boolean>(true);
 
   // Load challenges when component mounts or filters change
   useEffect(() => {
@@ -233,6 +237,7 @@ export const CodingProblemComponent: React.FC = () => {
                         onChange={setCode}
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}
+                        isDarkMode = {isDarkMode}
                       />
                     </div>
                   )}

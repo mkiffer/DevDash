@@ -44,7 +44,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
           <div
             key={challenge.id}
             className={`p-3 rounded-md border cursor-pointer hover:border-primary transition-colors ${
-              currentChallengeId === challenge.id ? 'border-primary bg-gray-50' : ''
+              currentChallengeId === challenge.id ? 'border-primary bg-gray-50 dark:bg-gray-800' : ''
             }`}
             onClick={() => onSelectChallenge(challenge.slug)}
           >

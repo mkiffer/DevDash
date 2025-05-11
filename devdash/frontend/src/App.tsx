@@ -7,6 +7,7 @@ import { useAuth } from './contexts/AuthContext'
 
 // Auth wrapper component
 const AuthenticatedApp = () => {
+  
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {

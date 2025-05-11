@@ -6,11 +6,11 @@ import { StackOverflowSearch } from '../components/dashboard/StackOverflowSearch
 import { CodingProblemComponent } from '../components/dashboard/CodingChallenges/index'
 import { useState, useEffect } from 'react'; // You already have these
 import { Moon, Sun } from 'lucide-react'; // Add these for the toggle icons
-
+import { useAuth } from '../contexts/AuthContext';
 const DashboardLayout: React.FC = () => {
   // Add this inside your DashboardLayout component, before the return statement
   const [isDarkMode, setIsDarkMode] = useState(false);
-
+  const { logout } = useAuth();
   // Add this effect to apply/remove the dark class
   useEffect(() => {
     if (isDarkMode) {
@@ -30,15 +30,21 @@ const DashboardLayout: React.FC = () => {
             <p className="text-lg text-muted-foreground">
               Your all-in-one coding environment
             </p>
+            
           </div>
           
-          {/* Add the dark mode toggle button */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+          <div className='flex gap-2'>
+              <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <button onClick={()=> logout()} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+              Log Out
+            </button>
+          </div>
+          
         </div>
 
         {/* Main Grid */}
@@ -53,7 +59,7 @@ const DashboardLayout: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
-              <CodingProblemComponent />
+              <CodingProblemComponent isDarkMode = {isDarkMode}/>
             </CardContent>
           </Card>
           {/* AI Chat Card */}

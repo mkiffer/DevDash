@@ -5,11 +5,11 @@ interface CodeEditorProps {
   code: string;
   onChange: (value: string) => void;
   language: string;
-  theme: string;
+  isDarkMode: boolean;
   options: any;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, theme, options }) => {
+export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, isDarkMode, options }) => {
   const handleChange = (value: string | undefined) => {
     onChange(value || '');
   };
@@ -20,7 +20,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language
     language={language} 
     value={code} 
     onChange={handleChange}
-    theme = {theme}
+    theme = {isDarkMode ? "vs-dark":"light"}
     options = {options}
     />
 

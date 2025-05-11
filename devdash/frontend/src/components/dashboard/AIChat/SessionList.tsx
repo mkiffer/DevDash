@@ -39,8 +39,8 @@ export const SessionList: React.FC<SessionListProps> = ({
               <li key={session.id} className="relative">
                 <button
                   onClick={() => onSelectSession(session.id)}
-                  className={`w-full text-left p-3 hover:bg-gray-100 transition-colors ${
-                    activeSessionId === session.id ? 'bg-blue-50' : ''
+                  className={`w-full text-left p-3 hover:bg-gray-100 dark:bg-gray-800 transition-colors ${
+                    activeSessionId === session.id ? 'bg-blue-50 dark:bg-gray-700' : ''
                   }`}
                 >
                   <div className="text-sm font-medium truncate">{session.preview}</div>

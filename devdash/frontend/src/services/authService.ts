@@ -82,7 +82,7 @@ export const authService ={
         return token ? { 'Authorization': `Bearer ${token}` } : {};
       },
       
-      logout() {
+    logout() {
         localStorage.removeItem('token');
       }    
 };
