@@ -14,6 +14,7 @@ import SubmissionResults from '@/components/dashboard/CodingChallenges/Submissio
 
 // Import utilities
 import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
+import { CodeEditor } from './CodeEditor/CodeEditor';
 
 export const CodingProblemComponent: React.FC = () => {
   // State management

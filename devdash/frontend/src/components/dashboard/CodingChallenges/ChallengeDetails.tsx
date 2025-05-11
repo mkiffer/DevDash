@@ -49,10 +49,10 @@ const ChallengeDetails: React.FC<ChallengeDetailsProps> = ({ challenge }) => {
           <h3 className="font-semibold mb-2">Sample Test Cases:</h3>
           <div className="space-y-3">
             {challenge.example_cases.map((testcase, index) => (
-              <div key={index} className="bg-gray-50 p-3 rounded-md">
+              <div key={index} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
                 <div className="mb-1">
                   <span className="font-medium text-xs">Input: </span>
-                  <pre className="text-sm bg-gray-100 p-2 rounded overflow-x-auto">
+                  <pre className="text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-x-auto">
                     {JSON.stringify(testcase.input,null,2)}
                   </pre>
                 </div>

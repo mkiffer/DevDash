@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
+import { CodeEditor } from './CodeEditor/CodeEditor';
 
 interface SolutionEditorProps {
   code: string;
@@ -12,24 +13,6 @@ interface SolutionEditorProps {
   isSubmitting: boolean;
 }
 
-// Define a proper interface for CodeEditor props
-interface CodeEditorProps {
-    code: string;
-    onChange: (code: string) => void;
-    language?: string;
-  }
-
-// Simple code editor component (replace with your actual editor component)
-const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language = 'javascript' }) => {
-  return (
-    <textarea
-      value={code}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full h-64 p-4 font-mono text-sm bg-gray-900 text-gray-100 rounded-md"
-      spellCheck="false"
-    />
-  );
-};
 
 const SolutionEditor: React.FC<SolutionEditorProps> = ({
   code,
@@ -52,6 +35,13 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           code={code}
           onChange={onChange}
           language={language}
+          theme="vs-dark"  // Try this theme!
+          options={{
+            minimap: { enabled: false },  // Disable minimap for small screens
+            fontSize: 14,
+            lineNumbers: 'on',
+            automaticLayout: true  // Important for responsive layouts
+          }}
         />
       </div>
       
