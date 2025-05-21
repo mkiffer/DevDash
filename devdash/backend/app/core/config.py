@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
 
     #auth secret key
-    SECRET_KEY : str ="asjfskdjndkjnfsdjknf!@#$$DFKERewdcwDERGdvdFFVFDDRT#wefsdggh"
+    SECRET_KEY : str =""
     ACCESS_TOKEN_EXPIRE_MINUTES : int = 30
 
     # Environment settings
@@ -35,8 +35,6 @@ class Settings(BaseSettings):
     # API Keys
     JUDGE0_API_KEY : str = ""
     
-    HACKERRANK_API_KEY: str = "None"
-    HACKERRANK_API_URL: str = "https://www.hackerrank.com/api/v3"
     USE_MOCK_DATA: bool = True
 
     class Config:

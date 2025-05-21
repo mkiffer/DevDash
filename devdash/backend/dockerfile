@@ -9,8 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install development dependencies
 RUN pip install uvicorn
 
-# Copy the application code
-COPY . .
+# Copy only application code, not config files
+COPY ./app ./app
+COPY ./migrations ./migrations
+COPY alembic.ini .
 
 # Create a non-root user to run the application
 RUN adduser --disabled-password --gecos "" appuser

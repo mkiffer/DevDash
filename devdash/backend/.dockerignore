@@ -1,0 +1,11 @@
+# Explicitly exclude environment files
+.env
+.env.*
+*.env
+
+# Other files to exclude
+__pycache__/
+*.py[cod]
+*.so
+.git
+.gitignore
