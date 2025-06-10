@@ -32,16 +32,16 @@ jobs:
           node-version: '18' # Or your project's preferred Node.js LTS version
 
       - name: Install Frontend Dependencies and Build
-        working-directory: ./frontend # Navigate to the frontend directory
+        working-directory: ./devdash/frontend # Navigate to the frontend directory
         run: |
           echo "Using VITE_API_BASE_URL: $VITE_API_BASE_URL"
           npm ci # Use 'ci' for cleaner installs in CI environments
           npm run build # Defined in your frontend/package.json
 
       - name: Deploy to S3
-        working-directory: ./frontend # To ensure paths are relative if needed, though sync path is absolute
+        working-directory: ./devdash/frontend # To ensure paths are relative if needed, though sync path is absolute
         run: |
-          aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }}/ --delete --acl public-read
+          aws s3 sync ./devdash/frontend/dist s3://${{ secrets.S3_BUCKET_NAME }}/ --delete --acl public-read
           # Note: --acl public-read is generally okay for static website content if your bucket isn't
           # configured for OAC and public access. If using OAC with CloudFront,
           # the objects don't strictly need to be public in S3 as CloudFront will fetch them.
