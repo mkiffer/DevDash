@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str # No default, should always be set from env/Secrets Manager
     JUDGE0_API_KEY: Optional[str] = None
     USE_MOCK_DATA: bool = True
-
+    #test deployment
     class Config:
         case_sensitive = True
         env_file = ".env" # For local development
