@@ -5,7 +5,7 @@ on:
     branches:
       - main # Or your primary deployment branch
     paths:
-      - 'devdash/frontend/**' # Trigger on changes within the frontend directory
+      - './devdash/frontend/**' # Trigger on changes within the frontend directory
       - '.github/workflows/deploy-frontend.yml' # Trigger if this workflow file itself changes
 
 jobs:
