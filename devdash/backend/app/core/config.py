@@ -2,57 +2,46 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 import os
 from dotenv import load_dotenv
+from typing import List, Optional # Make sure List is imported
 
-load_dotenv()
+load_dotenv() # For local .env file loading
+
 class Settings(BaseSettings):
-    # API Configurations
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Developer Dashboard"
-    
-    # CORS Configuration
-    BACKEND_CORS_ORIGINS: list[str] = [
-        "http://localhost:5173",  # Vite default
-        "http://localhost:3000", # Alternative frontend port 
-    ]
-    
 
-    # Stack Exchange API
-    STACK_EXCHANGE_API_KEY: str = ""
+    # This will be populated by the env var BACKEND_CORS_ORIGINS,
+    # which App Runner should have set to '["https://..."]'
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173"] # Default for local if env var not set
+
+    STACK_EXCHANGE_API_KEY: Optional[str] = None # Or "" if you prefer
     STACK_EXCHANGE_BASE_URL: str = "https://api.stackexchange.com/2.3"
-    
-    ANTHROPIC_API_KEY: str = ""
-
-    #auth secret key
-    SECRET_KEY : str =""
-    ACCESS_TOKEN_EXPIRE_MINUTES : int = 30
-
-    # Environment settings
+    ANTHROPIC_API_KEY: Optional[str] = None
+    SECRET_KEY: str # No default, should always be set from env/Secrets Manager
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ENVIRONMENT: str = "development"
-    DEBUG: bool = True
-    # Database settings
-    DATABASE_URL: str = ""
-    
-    # API Keys
-    JUDGE0_API_KEY : str = ""
-    
+    DEBUG: bool = False # Default to False for production
+    DATABASE_URL: str # No default, should always be set from env/Secrets Manager
+    JUDGE0_API_KEY: Optional[str] = None
     USE_MOCK_DATA: bool = True
 
     class Config:
         case_sensitive = True
-        env_file = ".env"
-
-        # HackerRank API
-    
-
-    def check_api_key(self):
-        if not self.ANTHROPIC_API_KEY or not self.ANTHROPIC_API_KEY.startswith('sk-ant-'):
-            raise ValueError("Invalid or missing Anthropic API key. Key should start with 'sk-ant-'")
-        return True
+        env_file = ".env" # For local development
+        env_file_encoding = 'utf-8'
 
 @lru_cache()
-def get_settings():
-    settings = Settings()
-    #settings.check_api_key()
-    return settings
+def get_settings() -> Settings:
+    print("Attempting to load settings...")
+    try:
+        s = Settings()
+        print(f"DEBUG: Loaded BACKEND_CORS_ORIGINS: {s.BACKEND_CORS_ORIGINS}")
+        print("Settings loaded successfully.")
+        return s
+    except Exception as e:
+        print(f"CRITICAL ERROR loading settings: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 settings = get_settings()

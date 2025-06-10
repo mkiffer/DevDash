@@ -1,0 +1,56 @@
+name: Deploy Frontend to AWS S3 and CloudFront
+
+on:
+  push:
+    branches:
+      - main # Or your primary deployment branch (e.g., master)
+    paths:
+      - 'frontend/**' # Trigger on changes within the frontend directory
+      - '.github/workflows/deploy-frontend.yml' # Trigger if this workflow file itself changes
+
+jobs:
+  build-and-deploy-frontend:
+    runs-on: ubuntu-latest
+    # This environment block sets the VITE_API_BASE_URL for the subsequent steps, specifically the build step.
+    env:
+      VITE_API_BASE_URL: ${{ secrets.APP_RUNNER_BACKEND_URL_WITH_API_PREFIX }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4 # Updated to v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4 # Updated to v4
+        with:
+          node-version: '18' # Or your project's preferred Node.js LTS version
+
+      - name: Install Frontend Dependencies and Build
+        working-directory: ./frontend # Navigate to the frontend directory
+        run: |
+          echo "Using VITE_API_BASE_URL: $VITE_API_BASE_URL"
+          npm ci # Use 'ci' for cleaner installs in CI environments
+          npm run build # Defined in your frontend/package.json
+
+      - name: Deploy to S3
+        working-directory: ./frontend # To ensure paths are relative if needed, though sync path is absolute
+        run: |
+          aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }}/ --delete --acl public-read
+          # Note: --acl public-read is generally okay for static website content if your bucket isn't
+          # configured for OAC and public access. If using OAC with CloudFront,
+          # the objects don't strictly need to be public in S3 as CloudFront will fetch them.
+          # However, if your S3 bucket policy for OAC refers to specific CloudFront identity,
+          # then this --acl public-read might not be necessary or even desired.
+          # If your S3 bucket *is* the direct static website host (not recommended with CloudFront),
+          # then public-read is needed.
+          # For CloudFront with OAC, usually you don't need --acl public-read if OAC is correctly set up.
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"

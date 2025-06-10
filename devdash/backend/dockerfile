@@ -2,24 +2,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements first to leverage Docker caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install development dependencies
-RUN pip install uvicorn
-
-# Copy only application code, not config files
 COPY ./app ./app
 COPY ./migrations ./migrations
 COPY alembic.ini .
+COPY debug_entrypoint.sh .  
+# Copy the new script
 
-# Create a non-root user to run the application
+RUN chmod +x ./debug_entrypoint.sh 
+# Ensure it's executable
+
 RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+# USER appuser # Temporarily comment out USER appuser for max debug permissions, will add back later
+                # Or, ensure appuser can execute debug_entrypoint.sh and python/gunicorn
 
-# Expose the application port
-EXPOSE 8000
+EXPOSE 8080 
+# Documenting the port Gunicorn will listen on (via $PORT)
 
-# We use the command from docker-compose for flexibility
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ENTRYPOINT ["./debug_entrypoint.sh"] # Using CMD is also fine for this script
+CMD ["./debug_entrypoint.sh"]
