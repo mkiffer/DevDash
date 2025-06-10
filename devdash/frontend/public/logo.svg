@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Code brackets -->
+  <path d="M14 26 L8 32 L14 38" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M50 26 L56 32 L50 38" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <!-- D lettermark in green - shifted significantly left -->
+  <path d="M24 20 L31 20 C37 20 41 25 41 32 C41 39 37 44 31 44 L24 44 L24 20" fill="#22c55e" stroke="#22c55e" stroke-width="1" />
+</svg>
