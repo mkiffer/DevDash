@@ -35,7 +35,7 @@ def get_settings() -> Settings:
     print("Attempting to load settings...")
     try:
         s = Settings()
-        print(f"DEBUG: Loaded BACKEND_CORS_ORIGINS: {s.BACKEND_CORS_ORIGINS}")
+        print(f"DEBUG: Loaded BACKEND_CORS_ORIGINS: {s.SECRET_KEY}")
         print("Settings loaded successfully.")
         return s
     except Exception as e:
