@@ -1,18 +1,25 @@
+# Use a specific, slim Python runtime as a parent image
 FROM python:3.11-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
+# Copy and install dependencies first to leverage Docker layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy your application code into the container
 COPY ./app ./app
 COPY ./migrations ./migrations
 COPY alembic.ini .
 
-
+# Create a non-root user to run the application for better security
 RUN adduser --disabled-password --gecos "" appuser
+USER appuser
 
-EXPOSE 8080 
-# Documenting the port Gunicorn will listen on (via $PORT)
+# Expose the port the app will run on. This must match the port in the CMD instruction.
+EXPOSE 8080
 
-# ENTRYPOINT ["./debug_entrypoint.sh"] # Using CMD is also fine for this script
+# The command to run your app using Gunicorn
+# This is the crucial missing step.
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "app.main:app"]
