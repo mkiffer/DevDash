@@ -3,7 +3,7 @@ name: Deploy Frontend to AWS S3 and CloudFront
 on:
   push:
     branches:
-      - main # Or your primary deployment branch
+      - main
     paths:
       - './devdash/frontend/**' # Trigger on changes within the frontend directory
       - '.github/workflows/deploy-frontend.yml' # Trigger if this workflow file itself changes
