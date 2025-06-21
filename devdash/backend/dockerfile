@@ -8,8 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app ./app
 COPY ./migrations ./migrations
 COPY alembic.ini .
-COPY debug_entrypoint.sh .  
-# Copy the new script
 
 RUN chmod +x ./debug_entrypoint.sh 
 # Ensure it's executable
