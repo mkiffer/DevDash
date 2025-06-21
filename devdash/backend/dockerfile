@@ -9,8 +9,6 @@ COPY ./app ./app
 COPY ./migrations ./migrations
 COPY alembic.ini .
 
-RUN chmod +x ./debug_entrypoint.sh 
-# Ensure it's executable
 
 RUN adduser --disabled-password --gecos "" appuser
 
