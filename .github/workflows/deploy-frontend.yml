@@ -29,10 +29,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-        
-      # ---- ADD THIS NEW STEP FOR DEBUGGING ----
-      - name: List Repository Files
-        run: ls -R
 
       - name: Install Frontend Dependencies and Build
         # CORRECTED: The working directory needs to point to where your frontend's package.json is

@@ -67,7 +67,7 @@ export const chatService = {
     
     try {
       const data = await apiRequest<any>(
-        `/chat/sessions/${sessionId}/messages/`, 
+        `/chat/sessions/${sessionId}/messages`, 
         'POST',
         {message}
       );
