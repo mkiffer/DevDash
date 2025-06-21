@@ -63,6 +63,8 @@ async def make_stack_exchange_request(endpoint: str, params: dict) -> dict:
                 detail=f"Error connecting to Stack Exchange API: {str(e)}"
             )
         except Exception as e:
+            print(f"UNEXPECTED STACK OVERFLOW ERROR: {e}")
+            print(f"TYPE OF ERROR: {type(e)}")
             raise HTTPException(
                 status_code=500,
                 detail=f"Unexpected error: {str(e)}"
