@@ -4,6 +4,7 @@ import DashboardLayout from './pages/MainDashboard'
 import { AuthProvider } from './contexts/AuthContext'
 import LoginPage from './pages/LoginPage'
 import { useAuth } from './contexts/AuthContext'
+import {Toaster} from "./components/ui/toaster"
 
 // Auth wrapper component
 const AuthenticatedApp = () => {
