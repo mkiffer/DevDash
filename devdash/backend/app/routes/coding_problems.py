@@ -110,7 +110,7 @@ results = []
 for i, test in enumerate(test_cases):
     try:
         input_data = test["input"]
-        expected = test["output"].split(:)[-1]
+        expected = test["output"]
         
             
         # Call the user's function with the input
