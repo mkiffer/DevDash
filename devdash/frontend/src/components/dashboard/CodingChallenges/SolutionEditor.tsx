@@ -12,6 +12,7 @@ interface SolutionEditorProps {
   onSubmit: () => void;
   isSubmitting: boolean;
   isDarkMode: boolean;
+  isLangaugeSupported: boolean;
 }
 
 
@@ -21,7 +22,8 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
   onChange,
   onSubmit,
   isSubmitting,
-  isDarkMode
+  isDarkMode,
+  isLangaugeSupported,
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -50,7 +52,7 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
       <div className="mt-auto">
         <Button 
           onClick={onSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isLangaugeSupported}
           className="w-full flex items-center justify-center gap-2 dark:bg-gray-800 dark:text-white"
         >
           {isSubmitting ? (
@@ -65,6 +67,11 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
             </>
           )}
         </Button>
+        {!isLangaugeSupported && (
+          <p className ="text-xs text-red-500 text-centre mt-2">
+            Submission for {language} is not yet supported
+          </p>
+        )}
       </div>
     </div>
   );

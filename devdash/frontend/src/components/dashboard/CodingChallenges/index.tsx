@@ -238,6 +238,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}
                         isDarkMode = {isDarkMode}
+                        isLangaugeSupported = {selectedLanguage === 'python'}
                       />
                     </div>
                   )}

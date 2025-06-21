@@ -66,7 +66,7 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
             "java": "class Solution {\n    public int[] solution(int[] nums, int target) {\n        // Your code here\n        return new int[]{0, 0};\n    }\n}",
             "cpp": "std::vector<int> solution(std::vector<int>& nums, int target) {\n    // Your code here\n    return {};\n}"
         },
-        "example_input": "nums"
+        "example_input": "nums, target"
     },
     
     {
@@ -395,7 +395,7 @@ Explanation: 9 exists in nums and its index is 4
             "java": "class Solution {\n    public int solution(int[] nums, int target) {\n        // Your code here\n        return -1;\n    }\n}",
             "cpp": "int solution(std::vector<int>& nums, int target) {\n    // Your code here\n    return -1;\n}"
         },
-        "example_input" : "nums"
+        "example_input" : "nums, target"
 
     },
     
@@ -596,7 +596,7 @@ Explanation: Return true because "leetcode" can be segmented as "leet code".
             "java": "class Solution {\n    public boolean solution(String s, List<String> wordDict) {\n        // Your code here\n        return false;\n    }\n}",
             "cpp": "bool solution(std::string s, std::vector<std::string>& wordDict) {\n    // Your code here\n    return false;\n}"
         },
-        "example_input" : "s"
+        "example_input" : "s, wordDict"
     },
     
     {
