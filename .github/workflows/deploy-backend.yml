@@ -39,7 +39,7 @@ jobs:
           # Use the ECR repository URI you copied earlier
           ECR_REGISTRY: 566362508363.dkr.ecr.ap-southeast-2.amazonaws.com
           ECR_REPOSITORY: devdash/devdash-backend # e.g., devdash-backend
-          IMAGE_TAG: ${{ github.sha }} # Use the commit hash for a unique tag
+          IMAGE_TAG: latest
         run: |
           # Build the docker image
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f devdash/backend/Dockerfile ./devdash/backend

@@ -15,11 +15,8 @@ RUN chmod +x ./debug_entrypoint.sh
 # Ensure it's executable
 
 RUN adduser --disabled-password --gecos "" appuser
-# USER appuser # Temporarily comment out USER appuser for max debug permissions, will add back later
-                # Or, ensure appuser can execute debug_entrypoint.sh and python/gunicorn
 
 EXPOSE 8080 
 # Documenting the port Gunicorn will listen on (via $PORT)
 
 # ENTRYPOINT ["./debug_entrypoint.sh"] # Using CMD is also fine for this script
-CMD ["./debug_entrypoint.sh"]

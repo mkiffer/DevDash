@@ -12,8 +12,6 @@ print("DEBUG_SESSION: Top of session.py loading...", flush=True) # Should appear
 db_url_to_use = "URL_NOT_SET_OR_ERROR_IN_CONFIG"
 try:
     db_url_to_use = settings.DATABASE_URL
-    print(f"DEBUG_SESSION: settings.DATABASE_URL received: ->{db_url_to_use}<-", flush=True)
-    print(f"DEBUG_SESSION: Type of settings.DATABASE_URL: {type(db_url_to_use)}", flush=True)
     # time.sleep(2)
 except Exception as e_config:
     print(f"CRITICAL_SESSION: Error accessing settings.DATABASE_URL: {e_config}", flush=True)
@@ -25,22 +23,16 @@ SessionLocal = None
 
 try:
     print(f"DEBUG_SESSION: Attempting to create SQLAlchemy engine with URL: {db_url_to_use}", flush=True)
-    # time.sleep(2)
     # Add echo=True for very verbose SQLAlchemy logs, remove for production
     engine = create_engine(db_url_to_use, echo=True, pool_pre_ping=True)
     print("DEBUG_SESSION: SQLAlchemy engine object created (but not necessarily connected).", flush=True)
-    # time.sleep(2)
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     print("DEBUG_SESSION: SessionLocal factory created.", flush=True)
-    # time.sleep(2)
 
     # This is a critical step that will try to connect to the DB
-    print("DEBUG_SESSION: Attempting Base.metadata.create_all(engine) - THIS WILL CONNECT TO DB...", flush=True)
-    # time.sleep(2)
     Base.metadata.create_all(bind=engine) # Create tables if they don't exist
     print("DEBUG_SESSION: Base.metadata.create_all(engine) COMPLETED.", flush=True)
-    # time.sleep(2)
 
 except Exception as e_engine:
     print(f"CRITICAL_SESSION: Error during SQLAlchemy engine creation or create_all: {e_engine}", flush=True)
@@ -63,6 +55,3 @@ def get_db():
     finally:
         # print("DEBUG_SESSION: DB Session closed.", flush=True) # Can be too noisy
         db.close()
-
-print("DEBUG_SESSION: session.py fully loaded and configured.", flush=True)
-# time.sleep(2)
