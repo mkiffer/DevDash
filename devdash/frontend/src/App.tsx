@@ -23,6 +23,7 @@ function App() {
     <AuthProvider>
       <div className="min-h-screen w-full bg-background">
         <AuthenticatedApp />
+        <Toaster />
       </div>
     </AuthProvider>
   );
