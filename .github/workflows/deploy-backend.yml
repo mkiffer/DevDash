@@ -1,0 +1,51 @@
+# .github/workflows/deploy-backend.yml
+
+name: Deploy Backend to AWS App Runner
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Trigger only when backend code or this workflow changes
+      - 'devdash/backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  build-and-deploy-backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for AWS OIDC authentication
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          # Use the ECR repository URI you copied earlier
+          ECR_REGISTRY: 566362508363.dkr.ecr.ap-southeast-2.amazonaws.com/devdash/devdash-backend
+          ECR_REPOSITORY: devdash/devdash-backend # e.g., devdash-backend
+          IMAGE_TAG: ${{ github.sha }} # Use the commit hash for a unique tag
+        run: |
+          # Build the docker image
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f devdash/backend/Dockerfile ./devdash/backend
+          
+          # Push the image to ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Set the image URI as an output for potential later steps
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
