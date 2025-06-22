@@ -39,6 +39,12 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
     loadChallenges();
   }, [selectedDifficulty]);
 
+    useEffect(() => {
+    if (activeTab === 'solution') {
+      setIsChallengeListVisible(false);
+    }
+  }, [activeTab]);
+
   // Load challenges from API
   const loadChallenges = async () => {
     setIsLoading(true);
