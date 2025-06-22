@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, MessageSquare } from 'lucide-react';
 import  parse  from 'html-react-parser';
+import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 
 interface StackOverflowResult {
   question_id: number;
@@ -56,7 +57,7 @@ export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelec
                 </div>
                 <CardContent className="py-3">
                   <div className="prose prose-sm max-w-none overflow-x-auto">
-                      {parse(result.body)}
+                      <MarkdownRenderer content={result.body}/>
                   </div>
                   
                   <div className="mt-2 text-xs text-gray-500">
