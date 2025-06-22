@@ -25,7 +25,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
             <code 
               {...props} 
               // Give inline code a slightly different background
-              className="bg-gray-200 dark:bg-gray-700 rounded px-1 py-0.5"
+              className="dark:bg-gray-700 rounded px-1 py-0.5"
             />
           )
         }}
