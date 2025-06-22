@@ -1,6 +1,7 @@
 // components/dashboard/AIChat/MessageList.tsx
 import React, { memo } from 'react';
 import { ChatMessage } from '../../../types';
+import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -23,7 +24,7 @@ export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isL
                 : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
             }`}
           >
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <MarkdownRenderer content={message.content}/>
             {message.timestamp && (
               <p className="text-xs mt-1 opacity-70">
                 {new Date(message.timestamp).toLocaleTimeString()}
