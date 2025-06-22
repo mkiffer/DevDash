@@ -12,6 +12,7 @@ interface StackOverflowResult {
   answer_count: number;
   tags: string[];
   link: string;
+  creation_date: string;
 }
 
 interface ResultListProps {
@@ -35,6 +36,7 @@ export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelec
                     <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
                       {result.score} votes
                     </span>
+
                     <span className="text-xs bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
                       <MessageSquare className="h-3 w-3" />
                       {result.answer_count}
@@ -52,7 +54,15 @@ export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelec
                     </span>
                   ))}
                 </div>
-
+                <CardContent className="py-3">
+                  <div className="prose prose-sm max-w-none overflow-x-auto">
+                      {parse(result.body)}
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-gray-500">
+                    Posted: {new Date(result.creation_date).toLocaleDateString()}
+                  </div>
+                </CardContent>
                 <div className="flex justify-between items-center gap-2">
                   <Button
                     onClick={() => onQuestionSelect(result.question_id, result.title)}
