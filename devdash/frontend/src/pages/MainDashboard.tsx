@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun } from 'lucide-react';
 import { CodingProblemComponent } from '@/components/dashboard/CodingChallenges';
-import {  AIChat as AIChatComponent } from '@/components/dashboard/AIChat';
+import { AIChat as AIChatComponent } from '@/components/dashboard/AIChat';
 import { StackOverflowSearch as StackOverflowSearchComponent } from '@/components/dashboard/StackOverflowSearch';
 
 const MainDashboard = () => {
@@ -19,13 +19,15 @@ const MainDashboard = () => {
   return (
     <div className={`flex h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex flex-col flex-1">
-        <header className="p-4 border-b flex justify-between items-center">
-          <h1 className="text-2xl font-bold">DevDash</h1>
+        <header className="p-4 border-b flex justify-between items-center bg-background">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">DevDash</h1>
+            <h2 className="text-lg text-muted-foreground hidden md:block">Your all in one training dashboard</h2>
+          </div>
           <Button onClick={toggleDarkMode} variant="outline" size="icon">
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
         </header>
-
         
         <main className="flex-1 p-4 overflow-auto bg-muted/40">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
@@ -72,7 +74,6 @@ const MainDashboard = () => {
             </div>
           </div>
         </main>
-       
       </div>
     </div>
   );
