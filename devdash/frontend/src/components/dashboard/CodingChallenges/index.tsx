@@ -125,6 +125,17 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
       // Wait a moment for processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+            // --- THIS IS THE CRITICAL FIX ---
+      // Check if the backend returned a definitive error (like Compilation Error)
+      if (submitResponse.data.status === 'Error') {
+        toast({
+          title: submitResponse.data.message || 'Submission Failed',
+          description: 'There was a problem with your code.',
+          variant: 'destructive',
+        });
+        // Stop execution here to prevent the crash
+        return; 
+      }
       
       
       setSubmissionResult(submitResponse.data);
