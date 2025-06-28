@@ -19,7 +19,7 @@ class ChatSession(Base):
         back_populates="session", 
         cascade="all, delete-orphan",
         order_by="ChatMessage.timestamp")
-    user = relationship("User", back_populates="chat_sessions")
+    user = relationship("User", back_populates="sessions")
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
