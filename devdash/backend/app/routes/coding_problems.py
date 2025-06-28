@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 import json
-from httpx import AsyncClient
+from httpx import AsyncClient, RequestError, HTTPStatusError
 import os
 import asyncio
 
@@ -79,6 +79,7 @@ async def submit_solution(
     language = submission.get("language")
     user_code = submission.get("code")
 
+    user_code = sanititize_user_code(user_code)
     #map languages to Judge0 language ids
     language_ids = {
         "python": 71,        # Python 3
@@ -95,6 +96,87 @@ async def submit_solution(
     # This will wrap the user's code in test harness code
     # Simple example for Python (you'd need different wrappers for each language)
 
+    test_runner = get_test_runner(language, problem, user_code)
+
+    #send to judge0
+    headers = {
+        "content-type": "application/json",
+        "X-RapidAPI-Key": JUDGE0_API_KEY, # Make sure this is loaded securely
+        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+    }
+    payload = {
+        "language_id": language_ids[language],
+        "source_code": test_runner
+    }
+
+    try:
+        async with AsyncClient(timeout=10.0) as client:
+            # 3. Keep your original asynchronous submission creation
+            response = await client.post(
+                f"{JUDGE0_API_URL}/submissions",
+                json=payload,
+                headers=headers
+            )
+            response.raise_for_status()
+            token = response.json().get("token")
+
+            if not token:
+                raise HTTPException(status_code=500, detail="Failed to get submission token from Judge0")
+
+            # 4. Keep your original polling loop
+            attempts = 0
+            while attempts < 10:
+                await asyncio.sleep(2) # Increased sleep time slightly
+                attempts += 1
+                status_response = await client.get(
+                    f"{JUDGE0_API_URL}/submissions/{token}",
+                    headers=headers
+                )
+                status_response.raise_for_status()
+                result = status_response.json()
+                if result.get("status", {}).get("id", 0) > 2: # If not in queue or processing
+                    break
+            
+            # 5. Add enhanced result and error handling
+            status_id = result.get("status", {}).get("id")
+            if status_id == 6: # Compilation Error
+                return {"status": "Error", "message": "Compilation Error", "details": result.get("compile_output")}
+            if status_id > 6: # Other errors (Runtime, TLE, etc.)
+                return {"status": "Error", "message": result.get("status", {}).get("description"), "details": result.get("stderr")}
+
+            stdout = result.get("stdout","")
+            if not stdout:
+                # Handle cases where stdout is empty but there's no explicit error
+                return {"status": "Error", "message": "Execution resulted in no output.", "details": result.get("stderr")}
+
+            try:
+                test_results = json.loads(stdout)
+                all_passed = all(t["passed"] for t in test_results)
+                score = sum(t["passed"] for t in test_results) * (100 / len(test_results))
+                return {
+                    "status": "Accepted" if all_passed else "Failed",
+                    "results": test_results,
+                    "score": score
+                }
+            except json.JSONDecodeError:
+                return {"status": "Error", "message": "Failed to parse test results from output.", "details": stdout}
+
+    except HTTPStatusError as e:
+        # Handle errors from the Judge0 API itself
+        raise HTTPException(status_code=e.response.status_code, detail=f"Judge0 API error: {e.response.text}")
+    except RequestError as e:
+        # Handle network-level errors
+        raise HTTPException(status_code=503, detail=f"Could not connect to Judge0: {e}")
+    except Exception as e:
+        # Catch any other unexpected exceptions
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+    
+def sanititize_user_code(code: str)->str:
+    '''Escapes triple-quotes to prevent breaking out of f-string'''
+    return code.replace('"""', '\"\"\"').replace("'''", "\'\'\'")
+
+def get_test_runner(language: str, problem: CodingProblem, user_code: str)-> str:
     if language == "python":
         test_cases = json.dumps(problem.test_cases).replace('true', 'True').replace('false', 'False')
         test_runner = f"""
@@ -137,96 +219,4 @@ for i, test in enumerate(test_cases):
 # Print results as JSON for parsing
 print(json.dumps(results))
 """
-    
-    else:
-        #add similar test runners for other languages
-        pass
-
-    #send to judge0
-    headers = {
-        "content-type": "application/json",
-        "X-RapidAPI-Key": JUDGE0_API_KEY,
-        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-    }
-    payload = {
-        "language_id": language_ids[language],
-        "source_code": test_runner,
-        "stdin": "",
-        "expected_output": ""
-    }
-
-    print(f"payload: {payload}")
-
-    try:
-        #create submission
-        async with AsyncClient() as client:
-            response = await client.post(
-                f"{JUDGE0_API_URL}/submissions",
-                json=payload,
-                headers=headers
-            )
-            response.raise_for_status()
-
-            token = response.json().get("token")
-
-            #poll for results
-            max_attempts = 10
-            attempts = 0
-
-            while attempts < max_attempts:
-                await asyncio.sleep(1) #wait between polling
-                attempts += 1
-
-                status_response = await client.get(
-                    f"{JUDGE0_API_URL}/submissions/{token}",
-                    headers = headers
-                )
-
-                if status_response.status_code == 200:
-                    result = status_response.json()
-
-                    if result.get("status", {}).get("id") not in [1,2]: #not queued or processing
-                        break
-                
-            #parse results
-            if status_response.status_code != 200:
-                raise HTTPException(status_code=500, detail = "Judge0 API error")
-
-            result = status_response.json()
-            print(f"result: {result}")
-            #check for compiler errors
-            if result.get("status", {}).get("id") in [6,11,12,13]:
-                print(f'status: {result.get("status", {}).get("id")}')
-                return{
-                    "status": "Error",
-                    "compile_output": result.get("compile_output"),
-                    "message" : "Compilation error"
-                }
-            
-            #extract test results from stdout
-            stdout = result.get("stdout","")
-
-            try: 
-                test_results = json.loads(stdout)
-
-                #calculate overall success
-                all_passed = all(test["passed"] for test in test_results)
-
-                return {
-                    "status": "Accepted" if all_passed else "Failed",
-                    "results": test_results,
-                    "score": 100 if all_passed else sum(t["passed"] for t in test_results)*(100/len(test_results))
-                }
-            except json.JSONDecodeError:
-                #if json cannot be parsed, return raw
-                return{
-                    "status": "Error",
-                    "message": "Failed to parse test results",
-                    "stdout": stdout,
-                    "stderr": result.get("stderr", "")
-                }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing submission: {str(e)}")
-    
-    
+    return test_runner

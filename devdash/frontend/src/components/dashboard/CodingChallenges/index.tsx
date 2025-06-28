@@ -142,11 +142,11 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting solution:', error);
       toast({
         title: 'Error',
-        description: 'Failed to submit solution. Please try again.',
+        description: error.message || 'Failed to submit solution. Please try again.',
         variant: 'destructive',
       });
     } finally {
