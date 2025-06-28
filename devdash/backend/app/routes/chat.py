@@ -20,6 +20,8 @@ class APIResponse(BaseModel):
     status: int
     message: Optional[str] = None
 
+class MessageContent(BaseModel):
+    message: str
 
 # Create a new session
 @router.post("/sessions", response_model=APIResponse)
@@ -152,7 +154,7 @@ async def get_session(session_id: str, user: User = Depends(get_current_user), d
 @router.post("/sessions/{session_id}/messages", response_model=APIResponse)
 async def send_message_to_session(
     session_id: str, 
-    message_content: str, 
+    message_content: MessageContent, 
     user: User = Depends(get_current_user),
     db: DbSession = Depends(get_db)
                                     ):
@@ -181,14 +183,14 @@ async def send_message_to_session(
             session_id=session_id,
             user_id = user.id,
             role="user",
-            content=message_content
+            content=message_content.message
         )
         session.messages.append(user_message)
         
         
         # Get AI response
         ai_response = await ai_service.get_response(
-            message_content,
+            message_content.message,
             message_history
         )
         
