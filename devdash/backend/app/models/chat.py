@@ -13,8 +13,13 @@ class ChatSession(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     
-    user = relationship("User", back_populates="sessions")
-    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+    
+    messages = relationship(
+        "ChatMessage", 
+        back_populates="session", 
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.timestamp")
+    owner = relationship("User", back_populates="chat_sessions")
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
