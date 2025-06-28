@@ -129,8 +129,8 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
       // Check if the backend returned a definitive error (like Compilation Error)
       if (submitResponse.data.status === 'Error') {
         toast({
-          title: submitResponse.data.message || 'Submission Failed',
-          description: 'There was a problem with your code.',
+          title: `Submission Failed: ${submitResponse.data.message}`,
+          description: submitResponse.data.stderr || 'There was a problem with your code.',
           variant: 'destructive',
         });
         // Stop execution here to prevent the crash
