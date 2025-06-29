@@ -130,7 +130,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({i
       if (submitResponse.data.status === 'Error') {
         toast({
           title: `Submission Failed: ${submitResponse.data.message}`,
-          description: submitResponse.data.compile_output || 'There was a problem with your code.',
+          description: submitResponse.data.compile_output || 'There was a problem with your code, most likely a syntax error...',
           variant: 'destructive',
         });
         // Stop execution here to prevent the crash
