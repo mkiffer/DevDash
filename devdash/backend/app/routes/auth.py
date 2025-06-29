@@ -65,7 +65,8 @@ def register_user(response: Response, user: UserCreate, db: Session = Depends(ge
         value=f"Bearer {access_token}", 
         httponly=True,
         secure=True,    # For production
-        samesite='Lax'
+        samesite='lax',
+        path="/"
     )
 
     # Return the newly created user object (or a success message)
@@ -97,7 +98,8 @@ def login_for_access_token(
         value=f"Bearer {access_token}",
         httponly=True,
         secure=True,
-        samesite="lax"
+        samesite="lax",
+        path="/"
     )
 
     return {"message": "Login Successful"}
