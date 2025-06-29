@@ -31,7 +31,12 @@ export const RegisterForm: React.FC = () => {
     //setIsLoading(true);
     
     try {
-      await register(email, username, password);
+      const credentials = {
+        email: email,
+        username: username,
+        password: password
+      }
+      await register(credentials);
       toast({
         title: "Registration successful",
         description: "Your account has been created",

@@ -1,23 +1,4 @@
 import { API_BASE_URL } from './apiConfig';
-/**
- * Creates fetch options with authentication headers
- */
-
-export const createAuthFetchOptions = (options: RequestInit = {}): RequestInit => {
-    const token = localStorage.getItem('token');
-    const headers = {
-        ...(options.headers as Record<string,string>)
-    };
-
-    if(token){
-        headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    return{
-        ...options,
-        headers,
-    };
-};
 
 /**
  * Generic API request function with authentication
@@ -30,40 +11,39 @@ export const apiRequest = async<T>(
     endpoint: string,
     method: string = 'GET',
     data?: any,
-    customOptions: RequestInit = {}
 
 ) : Promise<T> => {
     
+
+
     const options: RequestInit = {
         method,
-        ...customOptions,
+        // CRITICAL: This tells the browser to send cookies with the request.
+        credentials: 'include', 
+        headers: {}, // Start with empty headers
     };
 
-    if(!options.headers){
-        options.headers = {};
+
+    // Correctly handle body and Content-Type
+    if (data) {
+        if (data instanceof FormData) {
+            // If data is FormData, we don't set the Content-Type header.
+            // The browser does it automatically with the correct boundary.
+            options.body = data;
+        } else if (['POST', 'PUT', 'PATCH'].includes(method)) {
+            // For regular objects, we stringify and set the correct header.
+            (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(data);
+        }
     }
 
-    const token = localStorage.getItem('token');
+    //const fetchOptions = createAuthFetchOptions(options);
 
-    if(token){
-        (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    }
-
-    if(data && ['POST', 'PUT', 'PATCH'].includes(method)){
-        options.body = JSON.stringify(data);
-        (options.headers as Record<string, string>)['Content-Type'] = 'application/json';
-    }
-
-    const fetchOptions = createAuthFetchOptions(options);
     try{
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
 
         if (!response.ok){
 
-            if(response.status === 401){
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            }
 
             const errorData = await response.json().catch(()=> null);
             throw new Error(
@@ -71,6 +51,7 @@ export const apiRequest = async<T>(
                 `API request failed: ${response.status} ${response.statusText}`);
             
         } 
+
         return response.json();
     } catch(error){
         console.error(`API request error for ${endpoint}:`, error);

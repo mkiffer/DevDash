@@ -96,3 +96,19 @@ export interface CodeProblem {
     onCreateSession: () => void;
     onDeleteSession: (sessionId: string) => void;
   }
+
+  export interface User {
+      username: string;
+      email: string;
+  }
+  
+  export interface LoginRequest {
+      username: string;
+      password: string;
+  }
+  
+  export interface RegisterRequest{
+      email: string;
+      username: string;
+      password: string;
+  }

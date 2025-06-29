@@ -17,15 +17,19 @@ export const LoginForm: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await login(username, password);
+      const credentials = {
+        username: username,
+        password: password
+      }
+      await login(credentials);
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
-    } catch (error) {
+    } catch (error : any) {
       toast({
         title: "Login failed",
-        description: "Invalid username or password",
+        description: `Invalid username or password: ${error.message}`,
         variant: "destructive"
       });
     } finally {

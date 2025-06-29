@@ -1,5 +1,5 @@
 # app/routes/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -30,8 +30,8 @@ class UserOut(BaseModel):
     email: str
 
 # Register new user
-@router.post("/register", response_model=Token)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+@router.post("/register")
+def register_user(response: Response, user: UserCreate, db: Session = Depends(get_db)):
     # Check if user exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
@@ -52,17 +52,33 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     
-    # Create access token
+        # Create a token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username},
+        data={"sub": user.username}, # or user.email
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # Set the token in a secure, HttpOnly cookie
+    response.set_cookie(
+        key="access_token", 
+        value=f"Bearer {access_token}", 
+        httponly=True,
+        secure=True,    # For production
+        samesite='Lax'
+    )
+
+    # Return the newly created user object (or a success message)
+    # This can be useful for the frontend to have user info immediately
+    return {"username": user.username, "email": user.email}
 
 # Login endpoint
-@router.post("/token", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/token")
+def login_for_access_token(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)):
+
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -76,7 +92,21 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+
+    return {"message": "Login Successful"}
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Logout successful"}
+
 
 # Get current user info
 @router.get("/me", response_model=UserOut)
