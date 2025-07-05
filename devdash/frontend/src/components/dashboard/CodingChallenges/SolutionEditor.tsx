@@ -1,4 +1,4 @@
-// components/dashboard/HackerRank/SolutionEditor.tsx
+// mkiffer/devdash/DevDash-481fb7860a2af2f6654500d4175c6f63f23cc3a7/devdash/frontend/src/components/dashboard/CodingChallenges/SolutionEditor.tsx
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ interface SolutionEditorProps {
   isLangaugeSupported: boolean;
 }
 
-
 const SolutionEditor: React.FC<SolutionEditorProps> = ({
   code,
   language,
@@ -27,30 +26,28 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
 }) => {
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-4 flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold">Your Solution:</h3>
-          <Badge variant="outline" className="text-xs font-mono">
-            {language}
-          </Badge>
-        </div>
-        
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold">Your Solution:</h3>
+        <Badge variant="outline" className="text-xs font-mono">
+          {language}
+        </Badge>
+      </div>
+      <div className="flex-1 mb-4">
         <CodeEditor
           code={code}
           onChange={onChange}
           language={language}
-          isDarkMode={isDarkMode}  // Try this theme!
+          isDarkMode={isDarkMode}
           options={{
-            minimap: { enabled: false },  // Disable minimap for small screens
+            minimap: { enabled: false },
             fontSize: 14,
             lineNumbers: 'on',
-            automaticLayout: true  // Important for responsive layouts
+            automaticLayout: true,
           }}
         />
       </div>
-      
-      <div className="mt-auto">
-        <Button 
+      <div className="flex-shrink-0">
+        <Button
           onClick={onSubmit}
           disabled={isSubmitting || !isLangaugeSupported}
           className="w-full flex items-center justify-center gap-2 dark:bg-gray-800 dark:text-white"
@@ -68,7 +65,7 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           )}
         </Button>
         {!isLangaugeSupported && (
-          <p className ="text-xs text-red-500 text-centre mt-2">
+          <p className="text-xs text-red-500 text-center mt-2">
             Submission for {language} is not yet supported
           </p>
         )}

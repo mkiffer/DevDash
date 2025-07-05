@@ -1,5 +1,6 @@
+// mkiffer/devdash/DevDash-481fb7860a2af2f6654500d4175c6f63f23cc3a7/devdash/frontend/src/components/dashboard/CodingChallenges/CodeEditor/CodeEditor.tsx
 import React from 'react';
-import Editor, {DiffEditor, useMonaco, loader} from '@monaco-editor/react'
+import Editor, { DiffEditor, useMonaco, loader } from '@monaco-editor/react';
 
 interface CodeEditorProps {
   code: string;
@@ -14,17 +15,13 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language
     onChange(value || '');
   };
   return (
-    
-    <Editor 
-    height = "90vh" 
-    language={language} 
-    value={code} 
-    onChange={handleChange}
-    theme = {isDarkMode ? "vs-dark":"light"}
-    options = {options}
+    <Editor
+      height="100%"
+      language={language}
+      value={code}
+      onChange={handleChange}
+      theme={isDarkMode ? 'vs-dark' : 'light'}
+      options={options}
     />
-
-    
-    
   );
 };
