@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-export const LoginForm: React.FC = () => {
+interface LoginFormProps{
+  onGuestLogin: () => void;
+}
+
+export const LoginForm: React.FC<LoginFormProps> = ({ onGuestLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +71,10 @@ export const LoginForm: React.FC = () => {
         {isLoading ? 'Logging in...' : 'Login'}
       </Button>
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Registering...' : 'Register'}
+        {'Register'}
+      </Button>
+      <Button type="button" variant="outline" className="w-full" onClick={onGuestLogin}>
+        Continue as Guest
       </Button>
     </form>
   );

@@ -9,13 +9,13 @@ import {Toaster} from "./components/ui/toaster"
 // Auth wrapper component
 const AuthenticatedApp = () => {
   
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isGuest } = useAuth();
   
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
-  return isAuthenticated ? <DashboardLayout /> : <LoginPage />;
+  return isAuthenticated || isGuest ? <DashboardLayout /> : <LoginPage />;
 };
 
 function App() {

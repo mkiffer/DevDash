@@ -1,16 +1,30 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { MessageSquare, Search, Award } from 'lucide-react';
+import { MessageSquare, Search, Award, LogIn } from 'lucide-react';
 import { AIChat } from '../components/dashboard/AIChat';
 import { StackOverflowSearch } from '../components/dashboard/StackOverflowSearch';
 import { CodingProblemComponent } from '../components/dashboard/CodingChallenges/index'
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+
+const GuestAIChatPrompt = () => (
+    <div className="flex flex-col items-center justify-center h-full text-center">
+        <LogIn className="h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-semibold">Log in to use the AI Assistant</h3>
+        <p className="text-sm text-muted-foreground mt-2">
+            Create an account or log in to access the full features of the AI chat.
+        </p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+            Login or Register
+        </Button>
+    </div>
+);
 
 const DashboardLayout: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { logout } = useAuth();
+  const { logout, isAuthenticated, isGuest } = useAuth();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -74,7 +88,7 @@ const DashboardLayout: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
-              <AIChat />
+              {isGuest ? <GuestAIChatPrompt /> : <AIChat />}
             </CardContent>
           </Card>
 

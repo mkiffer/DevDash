@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const {isLoading} = useAuth();
+  const {isLoading, continueAsGuest} = useAuth();
 
   if(isLoading){
     return(
@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm />
+              <LoginForm onGuestLogin={continueAsGuest} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
