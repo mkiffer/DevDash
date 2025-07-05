@@ -31,7 +31,8 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
   const loadChallenges = async () => {
     setIsLoading(true);
     try {
-      const response = await codingProblemService.getProblems(selectedDifficulty || undefined);
+      const difficultyParam = selectedDifficulty === 'all' ? undefined : selectedDifficulty;
+      const response = await codingProblemService.getProblems(difficultyParam);
       setChallenges(response.data);
     } catch (error) {
       console.error('Error loading challenges:', error);

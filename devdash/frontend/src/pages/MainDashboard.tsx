@@ -49,7 +49,7 @@ const DashboardLayout: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* --- Left Column: Coding Challenges --- */}
-        <div className="h-[calc(100vh-200px)] lg:col-span-8">
+        <div className="h-[calc(100vh-200px)] lg:col-span-7">
           <Card className="h-full flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -64,7 +64,7 @@ const DashboardLayout: React.FC = () => {
         </div>
 
         {/* --- Right Column Wrapper --- */}
-        <div className="flex flex-col gap-6 lg:col-span-4">
+        <div className="flex flex-col gap-6 lg:col-span-5">
           {/* AI Chat Card */}
           <Card className="h-[700px] flex flex-col">
             <CardHeader>

@@ -51,7 +51,7 @@ const ChallengeToolbar: React.FC<ChallengeToolbarProps> = ({
         </Select>
         <Select value={selectedDifficulty} onValueChange={onDifficultyChange}>
           <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Difficulty" />
+            <SelectValue placeholder={difficulties[0].label} />
           </SelectTrigger>
           <SelectContent>
             {difficulties.map(diff => (

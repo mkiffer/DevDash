@@ -35,10 +35,6 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           {language}
         </Badge>
       </div>
-
-      {/* This is the container for the code editor. */}
-      {/* CHANGE: The key is `flex-1` (to grow and fill available space) and `min-h-0` (to allow shrinking). */}
-      {/* This prevents the container from overflowing its parent and creating an unwanted scrollbar. */}
       <div className="flex-1 relative min-h-0">
         <CodeEditor
           code={code}
@@ -48,7 +44,8 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           options={{
             minimap: { enabled: false },
             fontSize: 14,
-            lineNumbers: 'on'
+            lineNumbers: 'on',
+            scrollBeyondLastLine: false,
           }}
         />
       </div>

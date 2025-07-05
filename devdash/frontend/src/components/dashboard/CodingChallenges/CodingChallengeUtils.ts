@@ -40,7 +40,7 @@ export const getStarterCode = (language: string, challengeName?: string, example
    * Difficulty options for the dropdown
    */
   export const DIFFICULTY_OPTIONS = [
-    { value: 'any', label: 'Any Difficulty' },
+    { value: 'all', label: 'Any Difficulty' },
     { value: 'Easy', label: 'Easy' },
     { value: 'Medium', label: 'Medium' },
     { value: 'Hard', label: 'Hard' }

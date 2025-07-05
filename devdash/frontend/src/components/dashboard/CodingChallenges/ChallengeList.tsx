@@ -39,7 +39,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
   return (
     <div className="h-full overflow-auto">
       <h3 className="font-semibold mb-2">Challenges</h3>
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
         {challenges.map((challenge) => (
           <div
             key={challenge.id}
@@ -57,7 +57,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
               </Badge>
             </div>
             <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-              {challenge.description.slice(0,20)}
+              {challenge.description.slice(0,100) + ' ...'}
             </p>
           </div>
         ))}
