@@ -262,7 +262,7 @@ export const AIChat: React.FC = () => {
     <div className="flex h-full">
       {/* Session List Panel - conditionally shown */}
       {showSessions && (
-        <div className="w-64 h-full">
+        <div className="w-44 h-full">
           <SessionList
             sessions={sessions}
             activeSessionId={activeSessionId}

@@ -85,6 +85,18 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
         selectedLanguage
       );
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Check if the backend returned a definitive error (like Compilation Error)
+      if (submitResponse.data.status === 'Error') {
+        toast({
+          title: `Submission Failed: ${submitResponse.data.message}`,
+          description: submitResponse.data.compile_output || 'There was a problem with your code. Probably a syntax error',
+          variant: 'destructive',
+        });
+        // Stop execution here to prevent the crash
+        return; 
+      }
+
       setSubmissionResult(submitResponse.data);
       if (submitResponse.data.status === 'Accepted') {
         toast({
@@ -143,7 +155,8 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
               <ChallengeDetails challenge={currentChallenge} />
             </div>
             <div className="w-3/5 flex flex-col pl-4">
-              <div className="flex-1">
+              {/* The SolutionEditor container is now flexible and will shrink. */}
+              <div className="flex-1 min-h-0">
                 <SolutionEditor
                   code={code}
                   language={selectedLanguage}
@@ -155,7 +168,9 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
                 />
               </div>
               {submissionResult && (
-                <div className="mt-4">
+                // The results container has a fixed height, forcing the editor to shrink.
+                <div className="h-2/5 mt-4 border-t-2 pt-4 overflow-y-auto">
+                  <h3 className="font-semibold mb-2">Results:</h3>
                   <SubmissionResults result={submissionResult} />
                 </div>
               )}

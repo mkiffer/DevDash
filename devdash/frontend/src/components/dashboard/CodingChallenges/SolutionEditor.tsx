@@ -1,8 +1,8 @@
-// mkiffer/devdash/DevDash-481fb7860a2af2f6654500d4175c6f63f23cc3a7/devdash/frontend/src/components/dashboard/CodingChallenges/SolutionEditor.tsx
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
+// NOTE: Assuming `CodeEditor` is a named export from this path, as per your provided code.
 import { CodeEditor } from './CodeEditor/CodeEditor';
 
 interface SolutionEditorProps {
@@ -25,14 +25,21 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
   isLangaugeSupported,
 }) => {
   return (
+    // This is the main flex container that lays out its children vertically.
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
+      
+      {/* Header section for the editor, set to not shrink. */}
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <h3 className="font-semibold">Your Solution:</h3>
         <Badge variant="outline" className="text-xs font-mono">
           {language}
         </Badge>
       </div>
-      <div className="flex-1 mb-4">
+
+      {/* This is the container for the code editor. */}
+      {/* CHANGE: The key is `flex-1` (to grow and fill available space) and `min-h-0` (to allow shrinking). */}
+      {/* This prevents the container from overflowing its parent and creating an unwanted scrollbar. */}
+      <div className="flex-1 relative min-h-0">
         <CodeEditor
           code={code}
           onChange={onChange}
@@ -41,12 +48,13 @@ const SolutionEditor: React.FC<SolutionEditorProps> = ({
           options={{
             minimap: { enabled: false },
             fontSize: 14,
-            lineNumbers: 'on',
-            automaticLayout: true,
+            lineNumbers: 'on'
           }}
         />
       </div>
-      <div className="flex-shrink-0">
+      
+      {/* Footer section with the submit button, set to not shrink. */}
+      <div className="flex-shrink-0 pt-2">
         <Button
           onClick={onSubmit}
           disabled={isSubmitting || !isLangaugeSupported}
