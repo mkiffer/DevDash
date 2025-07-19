@@ -26,9 +26,7 @@ async def get_current_user(
         )
     
     try:
-        _, token_data = token.split()
-
-        payload = jwt.decode(token_data, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_data = TokenPayload(**payload)
         username: str = payload.get("sub")
         

@@ -1,84 +1,43 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
 from app.routes import stack_overflow, chat, auth, coding_problems
-from app.models.base import Base
-from app.database.session import engine  # Import the engine from our new module
-from fastapi.responses import JSONResponse
+from app.database.session import engine, Base
+from app.core.config import settings
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan manager for the FastAPI application.
+    This will run on startup and shutdown.
+    """
+    # On startup, create all database tables
+    Base.metadata.create_all(bind=engine)
+    yield
+    # On shutdown, you can add cleanup code here if needed
+
+# Define the app object with the lifespan manager
+app = FastAPI(title="DevDash API", lifespan=lifespan)
 
 
-def setup_database():
-    """Initialize database on startup if needed"""
-    # Create all tables
-    Base.metadata.create_all(engine)
 
-def create_application() -> FastAPI:
-    application = FastAPI(
-        title=settings.PROJECT_NAME,
-        debug=settings.DEBUG
-    )
+origins = settings.BACKEND_CORS_ORIGINS
 
-    # Configure CORS
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins= settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    
-    # Add a root route to provide API information
-    @application.get("/")
-    async def root():
-        return JSONResponse({
-            "app_name": settings.PROJECT_NAME,
-            "api_version": "v1",
-            "documentation": "/docs",
-            "status": "running",
-            "available_endpoints": [
-                f"{settings.API_V1_STR}/stackoverflow",
-                f"{settings.API_V1_STR}/chat"
-            ]
-        })
-    
-    # Also add an API version root
-    @application.get(f"{settings.API_V1_STR}")
-    async def api_root():
-        return JSONResponse({
-            "version": "v1",
-            "status": "running",
-            "endpoints": [
-                "/stackoverflow",
-                "/chat"
-            ]
-        })
-    # Include routers
-    application.include_router(
-        stack_overflow.router,
-        prefix=f"{settings.API_V1_STR}/stackoverflow",
-        tags=["stackoverflow"]
-    )
-    # Add chat router - this is the important part
-    application.include_router(
-        chat.router,
-        prefix=f"{settings.API_V1_STR}/chat",
-        tags=["chat"]
-    )
+# CORS middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
+# Include routers
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(stack_overflow.router, prefix="/api/v1/stackoverflow", tags=["stackoverflow"])
+app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
+app.include_router(coding_problems.router, prefix="/api/v1/coding", tags=["problems"])
 
-    application.include_router(
-        auth.router,
-        prefix = f"{settings.API_V1_STR}/auth",
-        tags = ["auth"]
-    )
-
-    application.include_router(
-        coding_problems.router,
-        prefix = f"{settings.API_V1_STR}/coding",
-        tags = ["coding"]
-    )
-
-    return application
-
-setup_database()
-app = create_application()
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the DevDash API"}

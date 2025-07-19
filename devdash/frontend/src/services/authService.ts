@@ -25,7 +25,7 @@ export const authService ={
         formData.append('username', credentials.username);
         formData.append('password', credentials.password);
         
-        await apiRequest('/auth/token', "POST" ,formData)
+        await apiRequest('/auth/token', "POST" , formData)
         
 
     },

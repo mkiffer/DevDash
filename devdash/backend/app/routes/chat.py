@@ -37,7 +37,11 @@ async def create_session(user: User = Depends(get_current_user), db: DbSession =
         db.refresh(new_session)
         
         return APIResponse(
-            data={"session_id": session_id},
+            data={
+                  "user_id" : user.id,
+                  "session_id" : session_id, 
+                  "created_at" : new_session.created_at
+                  },
             status=200,
             message="New chat session created"
         )
@@ -211,13 +215,22 @@ async def send_message_to_session(
         db.commit()
         
         return APIResponse(
-            data={
-                "message": {
+            data = {
+                "user_message" : {
+                    "id": user_message.id,
+                    "role": "user",
+                    "content": message_content.message,
+                    "timestamp": user_message.timestamp,
+                    
+
+                },
+                "ai_response": {
                     "id": assistant_message.id,
                     "role": "assistant",
                     "content": ai_response,
                     "timestamp": assistant_message.timestamp
-                }
+                },
+                "session_id": session.id
             },
             status=200
         )
@@ -227,6 +240,29 @@ async def send_message_to_session(
             status_code=500, 
             detail=str(e)
         )
+    
+# get all messages from a session
+@router.get("/sessions/{session_id}/messages", response_model=APIResponse)
+async def get_messages_from_session(session_id: str, user: User = Depends(get_current_user), db: DbSession = Depends(get_db)):
+    try:
+        session = get_session_with_messages(db, session_id, user.id)
+        messages = session.messages
+        message_list = [ {"role" : msg.role, "content" : msg.content } for msg in messages]
+        return APIResponse(
+            data = {
+                "session_id" : session_id,
+                "messages" : message_list
+            },
+            status=200
+
+
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
 
 # Delete a session
 @router.delete("/sessions/{session_id}", response_model=APIResponse)
