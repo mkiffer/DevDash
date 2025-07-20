@@ -206,5 +206,6 @@ yarn-error.log*
 
 docker-compose.yml
 !deploy-frontend.yml
-
+seed_user.py
+test.db
 .ini

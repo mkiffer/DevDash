@@ -62,7 +62,7 @@ def register_user(response: Response, user: UserCreate, db: Session = Depends(ge
     # Set the token in a secure, HttpOnly cookie
     response.set_cookie(
         key="access_token", 
-        value=f"Bearer {access_token}", 
+        value=access_token, 
         httponly=True,
         secure=True,    # For production
         samesite='none',
@@ -95,7 +95,7 @@ def login_for_access_token(
     )
     response.set_cookie(
         key="access_token",
-        value=f"Bearer {access_token}",
+        value=access_token,
         httponly=True,
         secure=True,
         samesite="none",

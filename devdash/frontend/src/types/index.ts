@@ -12,12 +12,7 @@ export interface CodeProblem {
     starterCode: string;
   }
   
-  export interface ChatMessage {
-    id: number;
-    role: 'assistant' | 'user';
-    content: string;
-    timestamp?: Date;
-  }
+
   
   export interface StackOverflowResult {
     question_id: number;
@@ -64,23 +59,8 @@ export interface CodeProblem {
     message?: string;
   }
   
-
-  // Chat session preview for the session list
-  export interface ChatSessionPreview {
-    id: string;
-    created_at: Date;
-    updated_at: Date;
-    preview: string;
-  }
   
-  // Full chat session with messages
-  export interface ChatSession {
-    id: string;
-    created_at: Date;
-    updated_at: Date;
-    preview: string;
-    messages: ChatMessage[];
-  }
+
   
   // Props for the chat input component
   export interface ChatInputProps {
@@ -111,4 +91,52 @@ export interface CodeProblem {
       email: string;
       username: string;
       password: string;
+  }
+
+
+// Response for creating a new session
+export interface CreateSessionPayload {
+  user_id: number;
+  session_id: string;
+  created_at: Date;
+}
+
+// Response for sending a message
+export interface SendMessageResponse {
+  user_message: ChatMessage;
+  ai_response: ChatMessage;
+  session_id: string;
+}
+
+// Payload for sending a message
+export interface SendMessagePayload {
+  user_message: ChatMessage;
+  ai_response: ChatMessage;
+  session_id: string;
+}
+
+  // Full chat session with messages
+  export interface ChatSession {
+    id: string;
+    user_id: number;
+    created_at: Date;
+    updated_at: Date;
+    preview: string;
+    messages: ChatMessage[];
+  }
+
+// Chat session preview for the session list
+export interface ChatSessionPreview {
+  id: string;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  preview: string;
+}
+
+  export interface ChatMessage {
+    id: number;
+    role: 'assistant' | 'user';
+    content: string;
+    timestamp: Date | string;
   }

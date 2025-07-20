@@ -1,5 +1,5 @@
 // components/dashboard/AIChat/MessageList.tsx
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { ChatMessage } from '../../../types';
 import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 
@@ -9,9 +9,21 @@ interface MessageListProps {
 }
 
 export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isLoading }) => {
+    // The ref and scroll logic now live inside this component.
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+
+  // This effect will run whenever the `messages` array changes,
+  // ensuring we always scroll down when a new message is added.
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto space-y-4 p-4">
+    <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
       {messages && messages.map((message) => (
         <div
           key={message.id}
@@ -25,9 +37,9 @@ export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isL
             }`}
           >
             <MarkdownRenderer content={message.content}/>
-            {message.timestamp && (
+            {message?.timestamp && (
               <p className="text-xs mt-1 opacity-70">
-                {new Date(message.timestamp).toLocaleTimeString()}
+                {new Date(message?.timestamp).toLocaleTimeString()}
               </p>
             )}
           </div>
@@ -45,6 +57,7 @@ export const MessageListComponent: React.FC<MessageListProps> = ({ messages, isL
           </div>
         </div>
       )}
+      <div ref={messagesEndRef} />
     </div>
   );
 };

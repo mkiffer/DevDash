@@ -27,7 +27,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        {sessions.length === 0 ? (
+        {sessions?.length === 0 ? (
           <div className="p-4 text-center text-sm text-gray-500">
             No chat sessions yet.
             <br />
@@ -35,7 +35,7 @@ export const SessionList: React.FC<SessionListProps> = ({
           </div>
         ) : (
           <ul className="divide-y">
-            {sessions.map((session) => (
+            {sessions?.map((session) => (
               <li key={session.id} className="relative">
                 <button
                   onClick={() => onSelectSession(session.id)}

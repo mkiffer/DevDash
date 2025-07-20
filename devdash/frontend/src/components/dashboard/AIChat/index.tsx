@@ -8,6 +8,7 @@ import { chatService } from '../../../services/aiChatService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -15,27 +16,18 @@ export const AIChat: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSessions, setShowSessions] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const isInitialMount = useRef(true);
-  const isCreatingSession = useRef(false);
 
 
-  // Load sessions when component mounts
   useEffect(() => {
-    if (isInitialMount.current){
+    if (isInitialMount.current) {
       isInitialMount.current = false;
       loadSessions();
-
     }
   }, []);
 
-  // Load messages when active session changes
   useEffect(() => {
     if (activeSessionId) {
       loadSessionMessages(activeSessionId);
@@ -45,109 +37,62 @@ export const AIChat: React.FC = () => {
   }, [activeSessionId]);
 
   const loadSessions = async () => {
-    if (isLoading) return;
-
     setIsLoading(true);
-
     try {
-      
       const response = await chatService.listSessions();
-      setSessions(response.data);
-      //only set active session if we dont have one and theres data
-      if (response.data.length > 0 && !activeSessionId) {
-        setActiveSessionId(response.data[0].id);
-      } else if (response.data.length === 0 && !activeSessionId && !isCreatingSession.current){
-        createInitialSession();
+      const sessionsList = response.data?.sessions || [];
+      setSessions(sessionsList);
+      
+      if (sessionsList.length > 0 && !activeSessionId) {
+        setActiveSessionId(sessionsList[0].id);
+      } else if (sessionsList.length === 0) {
+        handleCreateSession(); 
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load chat sessions",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load chat sessions", variant: "destructive" });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const createInitialSession = async () => {
-    if (isCreatingSession.current) return;
-  
-    isCreatingSession.current = true;
-    try {
-      const response = await chatService.createSession();
-      const newSessionId = response.data.session_id;
-      
-      // Set the ID without triggering loadSessions again
-      setActiveSessionId(newSessionId);
-      
-      // Update the sessions list with the new session
-      setSessions(prev => [{
-        id: newSessionId,
-        created_at: new Date(),
-        updated_at: new Date(),
-        preview: "New conversation"
-      }, ...prev]);
-    } catch (error) {
-      console.error('Error creating session:', error);
-    } finally {
-      isCreatingSession.current = false;
     }
   };
 
   const loadSessionMessages = async (sessionId: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const response = await chatService.getSession(sessionId);
-      if (response.data && response.data.session) {
-        setMessages(response.data.session.messages || []);
-      }
+      setMessages(response.data.session?.messages || []);
     } catch (error) {
       console.error(`Error loading messages for session ${sessionId}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to load chat messages",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load chat messages", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleCreateSession = async () => {
-    if(isLoading || isCreatingSession.current) return;
-
-    isCreatingSession.current = true;
     setIsLoading(true);
-
     try {
       const response = await chatService.createSession();
-      const newSessionId = response.data.session_id;
+      const sessionData = response.data;
       
-      //First update session list
-      setSessions(prev => [{
-        id: newSessionId,
-        created_at: new Date(),
-        updated_at: new Date(),
-        preview: "New Conversation"
-      }, ...prev]);
-
+      // Create a preview for the new session to add to the list
+      const newSessionPreview: ChatSessionPreview = {
+        id: sessionData.session_id,
+        user_id: sessionData.user_id, 
+        created_at: new Date(sessionData.created_at), 
+        updated_at: new Date(sessionData.created_at),
+        preview: "New Conversation" 
+      };
       
-      
-      // Set the new session as active
-      setActiveSessionId(newSessionId);
+      setSessions(prev => [newSessionPreview, ...prev]);
+      setActiveSessionId(newSessionPreview.id);
       setMessages([]);
+
     } catch (error) {
       console.error('Error creating new session:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create new chat session",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to create new chat session", variant: "destructive" });
     } finally {
       setIsLoading(false);
-      isCreatingSession.current = false;
     }
   };
 
@@ -155,114 +100,71 @@ export const AIChat: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this chat session?')) {
       return;
     }
-    
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await chatService.deleteSession(sessionId);
+      toast({ title: "Success", description: "Chat session deleted" });
       
-      // Refresh the session list
+      // After deleting, reload the session list
       const response = await chatService.listSessions();
-      setSessions(response.data);
+      const sessionsList = response.data?.sessions || [];
+      setSessions(sessionsList);
       
-      // If the active session was deleted, set active to the first available or null
       if (activeSessionId === sessionId) {
-        if (response.data.length > 0) {
-          setActiveSessionId(response.data[0].id);
-        } else {
-          setActiveSessionId(null);
-          setMessages([]);
-        }
+        setActiveSessionId(sessionsList.length > 0 ? sessionsList[0].id : null);
       }
-      
-      toast({
-        title: "Success",
-        description: "Chat session deleted",
-      });
     } catch (error) {
       console.error(`Error deleting session ${sessionId}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to delete chat session",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Helper function to send a message to a specific session
-  const sendMessageToSession = async (sessionId: string, content: string) => {
-    const newUserMessage: ChatMessage = {
-      id: Math.max(0, ...messages.map(m => m.id || 0)) + 1,
-      role: 'user',
-      content,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    setIsLoading(true);
-
-    try {
-      const response = await chatService.sendMessageToSession(sessionId, content);
-      
-      if (response.data) {
-        setMessages(prev => [...prev, response.data]);
-      }
-      
-      // Refresh sessions to update previews
-      const sessionsResponse = await chatService.listSessions();
-      setSessions(sessionsResponse.data);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete chat session", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSendMessage = async (content: string) => {
-    // If no active session, create one first
-    if (!activeSessionId) {
-      try {
-        setIsLoading(true);
-        // Create a new session
-        const response = await chatService.createSession();
-        const newSessionId = response.data.session_id;
-        
-        // Set as active session
-        setActiveSessionId(newSessionId);
-        // Continue with sending the message using the new session ID
-        await sendMessageToSession(newSessionId, content);
-        return;
-      } catch (error) {
-        console.error('Error creating session for message:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create chat session",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-    } else {
-      // If we have an active session, send the message to it
-      await sendMessageToSession(activeSessionId, content);
+    if (!activeSessionId) return;
+    
+    const optimisticMessage: ChatMessage = {
+      id: Math.random(),
+      role: 'user',
+      content,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await chatService.sendMessageToSession(activeSessionId, content);
+      const { user_message, ai_response } = response.data;
+      
+      // Replace optimistic message with server-confirmed messages
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== optimisticMessage.id),
+        user_message,
+        ai_response
+      ]);
+      
+      // Refresh session list to update the preview text
+      const sessionsResponse = await chatService.listSessions();
+      setSessions(sessionsResponse.data?.sessions || []);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
+      // Roll back optimistic update
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const toggleSessionPanel = () => {
-    setShowSessions(!showSessions);
-  };
+  const toggleSessionPanel = () => setShowSessions(!showSessions);
 
   return (
-    <div className="flex h-full">
-      {/* Session List Panel - conditionally shown */}
+    <div className="flex h-full overflow-hidden">
       {showSessions && (
-        <div className="w-44 h-full">
+        <div className="w-50 border-r flex flex-col flex-shrink-0">
           <SessionList
             sessions={sessions}
             activeSessionId={activeSessionId}
@@ -273,43 +175,24 @@ export const AIChat: React.FC = () => {
         </div>
       )}
       
-      {/* Chat Panel */}
-      <div className="flex-1 flex flex-col h-full">
-        <div className="border-b p-2 flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleSessionPanel}
-            className="mr-2"
-          >
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="border-b p-2 flex items-center justify-between flex-shrink-0">
+          <Button variant="ghost" size="sm" onClick={toggleSessionPanel} className="mr-2">
             {showSessions ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
           </Button>
-          
           <span className="text-sm font-medium flex-1">
             {activeSessionId ? 'Chat Session' : 'No Active Session'}
           </span>
-          
-          {activeSessionId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCreateSession()}
-              className="text-blue-500"
-            >
-              New Chat
-            </Button>
-          )}
+          <Button variant="ghost" size="sm" onClick={handleCreateSession} className="text-blue-500">
+            New Chat
+          </Button>
         </div>
         
-        <MessageList 
-          messages={messages} 
-          isLoading={isLoading} 
-        />
-        <div ref={messagesEndRef} />
-        <ChatInput 
-          onSend={handleSendMessage} 
-          disabled={isLoading || !activeSessionId} 
-        />
+        <MessageList messages={messages} isLoading={isLoading} />
+        
+        <div className="flex-shrink-0">
+            <ChatInput onSend={handleSendMessage} disabled={isLoading || !activeSessionId} />
+        </div>
       </div>
     </div>
   );
