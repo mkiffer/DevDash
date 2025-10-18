@@ -15,7 +15,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
     setInput('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -27,7 +27,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
         placeholder="Type your message..."
         className="flex-1 resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
         rows={1}
