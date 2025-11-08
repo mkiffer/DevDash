@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from pydantic import BaseModel
+from app.core.config import settings
 from app.database.session import get_db
 from app.models.user import User
 from app.dependencies import get_current_user
@@ -15,6 +16,7 @@ from app.auth.utils import (
 )
 
 router = APIRouter()
+
 
 class UserCreate(BaseModel):
     email: str
@@ -29,6 +31,15 @@ class UserOut(BaseModel):
     username: str
     email: str
 
+def get_cookie_settings():
+    '''Return cookie settings based on environment'''
+    is_production = settings.ENVIRONMENT == "production"
+    return {
+            "httponly": True,
+            "secure": is_production,
+            "samesite": "none" if is_production else "lax",
+            "path" : "/",
+            }
 # Register new user
 @router.post("/register")
 def register_user(response: Response, user: UserCreate, db: Session = Depends(get_db)):
@@ -58,16 +69,15 @@ def register_user(response: Response, user: UserCreate, db: Session = Depends(ge
         data={"sub": user.username}, # or user.email
         expires_delta=access_token_expires
     )
-
+    
+    cookie_settings = get_cookie_settings()
+    print(str(cookie_settings))
     # Set the token in a secure, HttpOnly cookie
     response.set_cookie(
         key="access_token", 
         value=access_token, 
-        httponly=True,
-        secure=True,    # For production
-        samesite='none',
-        path="/"
-    )
+        **cookie_settings
+        )
 
     # Return the newly created user object (or a success message)
     # This can be useful for the frontend to have user info immediately
@@ -93,14 +103,13 @@ def login_for_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires
     )
+    cookie_settings = get_cookie_settings()
+    print(str(cookie_settings))
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/"
-    )
+        **cookie_settings
+        )
 
     return {"message": "Login Successful"}
 

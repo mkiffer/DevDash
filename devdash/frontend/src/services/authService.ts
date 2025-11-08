@@ -31,11 +31,7 @@ export const authService ={
     },
 
     async register(userData: RegisterRequest): Promise<void>{
-        const formData = new FormData();
-
-        formData.append('email', userData.email);
-        formData.append('username', userData.username);
-        formData.append('password', userData.password);
+        await apiRequest('/auth/register', "POST", userData);
     },
 
     async getCurrentUser() : Promise<User> {
