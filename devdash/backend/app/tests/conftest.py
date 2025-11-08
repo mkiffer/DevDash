@@ -13,7 +13,7 @@ from app.database.session import Base
 from app.dependencies import get_db
 from app.models.user import User
 from app.auth.utils import get_password_hash
-from app.services.auth_service import create_access_token
+from app.auth.utils import create_access_token
 
 # --- Import all models here ---
 # This is the crucial change. By importing the models here, we ensure that
