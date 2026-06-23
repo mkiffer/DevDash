@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str # No default, should always be set from env/Secrets Manager
     JUDGE0_API_KEY: Optional[str] = None
     USE_MOCK_DATA: bool = True
+    # Shared secret that the CDN (CloudFront) injects as the X-Origin-Verify
+    # header. When set, requests missing the matching header are rejected so the
+    # public Lambda Function URL can only be reached through CloudFront. Unset
+    # locally, so local dev is unaffected.
+    ORIGIN_SHARED_SECRET: Optional[str] = None
     #test deployment
 
 

@@ -115,7 +115,15 @@ def login_for_access_token(
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie("access_token")
+    # delete_cookie must echo the attributes the cookie was set with, otherwise
+    # browsers won't clear a Secure; SameSite=None cookie in production.
+    cookie_settings = get_cookie_settings()
+    response.delete_cookie(
+        "access_token",
+        path=cookie_settings["path"],
+        samesite=cookie_settings["samesite"],
+        secure=cookie_settings["secure"],
+    )
     return {"message": "Logout successful"}
 
 

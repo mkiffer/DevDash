@@ -1,6 +1,7 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import NullPool
 from app.core.config import settings
 import logging
 from app.models.base import Base
@@ -17,7 +18,11 @@ DATABASE_URL=settings.DATABASE_URL
 logger.info(f"Attempting to create SQLAlchemy engine with URL: {DATABASE_URL}")
 
 try:
-    engine = create_engine(DATABASE_URL)
+    # NullPool: Lambda containers are short-lived and Neon pools connections at
+    # its own proxy, so we don't keep a SQLAlchemy-side pool. pool_pre_ping
+    # validates connections to avoid stale-connection errors across cold/warm
+    # invocations.
+    engine = create_engine(DATABASE_URL, poolclass=NullPool, pool_pre_ping=True)
     logger.info("SQLAlchemy engine object created (but not necessarily connected).")
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

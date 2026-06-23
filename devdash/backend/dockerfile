@@ -1,26 +1,15 @@
-# Use a specific, slim Python runtime as a parent image
-FROM python:3.11-slim
+# AWS Lambda container image for the FastAPI backend.
+# Uses the official Lambda Python base image, which bundles the Runtime
+# Interface Client so the app runs on Lambda's execution environment.
+FROM public.ecr.aws/lambda/python:3.11
 
-# Set the working directory in the container
-WORKDIR /app
-
-# Copy and install dependencies first to leverage Docker layer caching
-COPY requirements.txt .
-RUN pip install --upgrade pip
+# Install dependencies first to leverage Docker layer caching.
+# LAMBDA_TASK_ROOT is /var/task — the directory Lambda runs from.
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your application code into the container
-COPY ./app ./app
-COPY ./migrations ./migrations
-COPY alembic.ini .
+# Copy application code.
+COPY ./app ${LAMBDA_TASK_ROOT}/app
 
-# Create a non-root user to run the application for better security
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
-
-# Expose the port the app will run on. This must match the port in the CMD instruction.
-EXPOSE 8080
-
-# The command to run your app using Gunicorn
-# This is the crucial missing step.
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "app.main:app"]
+# Handler: module.attribute pointing at the Mangum adapter in app/lambda_handler.py
+CMD ["app.lambda_handler.handler"]

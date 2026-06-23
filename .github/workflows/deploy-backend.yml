@@ -1,6 +1,6 @@
 # .github/workflows/deploy-backend.yml
 
-name: Deploy Backend to AWS App Runner
+name: Deploy Backend to AWS Lambda
 
 on:
   push:
@@ -41,11 +41,30 @@ jobs:
           ECR_REPOSITORY: devdash/devdash-backend # e.g., devdash-backend
           IMAGE_TAG: latest
         run: |
-          # Build the docker image
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f devdash/backend/Dockerfile ./devdash/backend
-          
+          # Build the docker image (filename is lowercase `dockerfile` in git;
+          # the CI runner filesystem is case-sensitive).
+          # --provenance=false/--sbom=false: Lambda container images require a
+          # single Docker-schema2 manifest; buildx attestations would produce a
+          # manifest list that Lambda rejects.
+          docker build --provenance=false --sbom=false -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f devdash/backend/dockerfile ./devdash/backend
+
           # Push the image to ECR
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          # Set the image URI as an output for potential later steps
+
+          # Set the image URI as an output for the deploy step
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy new image to Lambda
+        env:
+          ECR_REGISTRY: 566362508363.dkr.ecr.ap-southeast-2.amazonaws.com
+          ECR_REPOSITORY: devdash/devdash-backend
+          IMAGE_TAG: latest
+          LAMBDA_FUNCTION_NAME: devdash-backend
+        run: |
+          # Point the Lambda function at the freshly pushed image and wait for
+          # the update to finish so the workflow reflects deploy success/failure.
+          aws lambda update-function-code \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          aws lambda wait function-updated \
+            --function-name $LAMBDA_FUNCTION_NAME
