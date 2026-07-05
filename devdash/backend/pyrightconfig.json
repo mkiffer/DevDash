@@ -1,0 +1,10 @@
+{
+  "include": ["backend"],
+  "venvPath": "./backend",
+  "venv": "venv",
+  "reportMissingImports": true,
+  "reportUnusedImport": true,
+  "pythonVersion": "3.12"
+}
+
+
