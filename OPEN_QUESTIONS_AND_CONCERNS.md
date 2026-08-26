@@ -1,6 +1,6 @@
 # Open Questions and Concerns
 
-Re-audited **2026-08-26** against `main`. The previous revision of this file was written
+Re-audited **2026-08-26** against `main`, then updated across two rounds of fixes the same day. The previous revision of this file was written
 2026-03-22 against the **App Runner + RDS + Docker Compose** stack, which no longer exists.
 Every item below was re-verified against the current architecture:
 
@@ -15,7 +15,47 @@ Infrastructure history, the secrets correction, and the image-pin outage post-mo
 
 ---
 
-## Fixed in this pass (2026-08-26)
+## Fixed (2026-08-26, round 2 — deploy safety)
+
+### Backend CI, health endpoint, and deploy smoke check *(was #3, #4, #31)*
+The backend deploy had no safety net at all: build, push, update the function, report success —
+without a test, a migration, or any check that the result responded. That is exactly how the Lambda
+sat `Inactive` for eight days.
+
+- `GET /api/v1/health` in `app/main.py` does a real `SELECT 1` rather than returning a literal, so
+  "app is down" and "app is up, database is not" are distinguishable. It stays behind the
+  `X-Origin-Verify` guard, so a 200 also proves the CloudFront path — the leg that actually broke.
+- `ci.yml` gained a **backend job** running on pull requests, mirroring the frontend one.
+- `deploy-backend.yml` now runs `alembic upgrade head` **before** the function update, then smoke
+  checks the health endpoint through CloudFront with retries, failing the job on non-2xx.
+
+> **A trap worth recording:** the backend tests only passed locally because `python-dotenv` walks up
+> and finds the gitignored `devdash/.env`. `SECRET_KEY` and `DATABASE_URL` are declared with no
+> defaults, so on a clean checkout `Settings()` raises and *every test errors at collection*.
+> Verified against a fresh clone. The CI job injects throwaway values; `conftest.py` overrides
+> `get_db` with in-memory SQLite, so `DATABASE_URL` is never connected to — it only has to parse.
+
+### `user_id` is now `NOT NULL` *(was #10)*
+`ChatSession.user_id` and `ChatMessage.user_id` are non-nullable, via migration `dcf235f97791`.
+Every write path already set them. Checked before applying: zero null rows in either table, so no
+backfill was needed. This was also the first migration to run on the chain rebuilt in round 1,
+which exercised autogenerate and `upgrade head` end to end.
+
+### API Gateway throttling *(partial — was #8, #39)*
+The `$default` stage of API `k6e5fg1hua` had **no throttling configured at all**. It now carries
+`ThrottlingRateLimit=10`, `ThrottlingBurstLimit=20`. Only `/api/v1/*` traverses API Gateway, so the
+static frontend is unaffected.
+
+This was chosen over the usual FastAPI answer deliberately: an in-process limiter like `slowapi` is
+**per-container** on Lambda, so it resets on every cold start and barely limits anything.
+
+**What it does not do:** it is a burst and runaway backstop, not a spend cap — 10 req/s sustained is
+still a large daily volume. Genuine per-user cost control over the Anthropic and Judge0 spend still
+needs a database-backed budget. That remains open under **High** below.
+
+---
+
+## Fixed (2026-08-26, round 1)
 
 ### Retired Claude model — the AI chat was broken in production
 `ai_service.py` pinned `claude-3-opus-20240229`, which the API now rejects:
@@ -79,24 +119,14 @@ Recorded so they don't get re-raised.
 
 ## High
 
-### No tests, no migrations, and no smoke check in CI *(was #3, #4, #31)*
-Neither workflow runs tests, applies migrations, or verifies the deploy actually works. The concrete
-argument is in the history: the Lambda sat in `State: Inactive` for roughly eight days returning 500s
-on every call, and nothing noticed. A post-deploy smoke check would have caught it the same day.
-
-These belong together because the smoke check needs something to call:
-- Add a `/health` endpoint to `main.py` reporting app + database reachability.
-- `deploy-backend.yml`: run `pytest` before build; `alembic upgrade head` after the Lambda update;
-  `curl` the health endpoint **through CloudFront** and fail the job on non-200.
-- `deploy-frontend.yml`: run `npm run test -- --run` and `npm run build`.
-- Add `pull_request` triggers to both — today they only run on push to `main`, so nothing is
-  checked before merge.
-
-### No rate limiting or AI cost controls *(was #8, #39)*
-Nothing rate-limits anything. Two specific exposures:
+### No per-user cost controls *(was #8, #39 — partially addressed)*
+The API Gateway throttle above caps burst and runaway traffic globally. What it cannot do is stop one
+authenticated user from steadily draining the budget:
 - `POST /coding/problems/{slug}/submit` is **unauthenticated** and spends the account's Judge0 quota
-  on every call. See the Q2 decision below — the agreed fix is an IP-based rate limit, not auth.
-- The chat endpoint is behind auth but has no per-user or per-session token budget.
+  on every call. Per the Q2 decision it stays public, so the throttle is currently its only guard.
+- The chat endpoint has no per-user or per-session token budget.
+
+The remaining fix is a counter in Neon checked by a FastAPI dependency on those two endpoints.
 
 ### Internal exception details returned to clients *(was #6)*
 `str(e)` is still returned in every `chat.py` handler, at `coding_problems.py:172`, and at
@@ -155,10 +185,6 @@ All still present, and best done as one change since they overlap:
 `auth/utils.py:18` and `dependencies.py:11-13` both define an `OAuth2PasswordBearer`, and **neither
 is used** — `get_current_user` reads the cookie directly. The fix is deletion, not consolidation.
 
-### Nullable `user_id` foreign keys *(was #10)*
-Every write path sets `user_id`, so the columns can be tightened. This needed the Alembic fix first;
-it is now unblocked.
-
 ### No React error boundaries *(was #36)*
 One component crash still takes down the whole app.
 
@@ -166,23 +192,26 @@ One component crash still takes down the whole app.
 
 ## Low
 
-Confirmed still present, none of them urgent.
+Re-confirmed against `main` on 2026-08-26 — line numbers shifted by the ESLint branch and are
+current. None are urgent.
 
 - **(was #15)** `RegisterForm.tsx:30` — `setIsLoading(true)` is commented out, so the button never
   shows a loading state while `finally` still clears it.
 - **(was #16)** `LoginForm.tsx:73-75` — a second `type="submit"` button labelled "Register" inside
   the login form. It submits the login form.
-- **(was #17)** `AIChat/index.tsx:127` — optimistic message IDs from `Math.random()`.
+- **(was #17)** `AIChat/index.tsx:140` — optimistic message IDs from `Math.random()`.
 - **(was #18)** `isLangaugeSupported` misspelled in `CodingChallenges/index.tsx` and
   `SolutionEditor.tsx`.
-- **(was #20)** `SearchBar.tsx:43` — `p-[1-px]` is not valid Tailwind.
-- **(was #21)** `StackOverflowSearch/index.tsx:118` — empty `useEffect`.
-- **(was #26)** `types/index.ts` — `APIResponse<T>` and `ChatInputProps` each defined twice.
-- **(was #27)** Scattered `any` types.
+- **(was #20)** `SearchBar.tsx:36` — `p-[1-px]` is not valid Tailwind.
+- **(was #21)** `StackOverflowSearch/index.tsx:107` — empty `useEffect`.
+- **(was #26)** `types/index.ts` — `ChatInputProps` still defined twice (lines 49 and 60). The
+  duplicate `APIResponse<T>` was removed by the ESLint branch.
+- ~~**(was #27)** Scattered `any` types~~ — **resolved** by the ESLint branch; no `any` remains
+  outside tests.
 - **(was #28)** `apiConfig.ts:6` logs the API base URL on every import.
 - **(was #32)** No error tracking. Lambda gives CloudWatch logs by default, but nothing is
   structured and nothing alerts.
-- **(was #35)** ~~Hardcoded DB URL in `alembic.ini`~~ — fixed in this pass.
+- ~~**(was #35)** Hardcoded DB URL in `alembic.ini`~~ — fixed in round 1.
 - **(was #37)** Almost no `aria-*` attributes; no keyboard navigation for custom components.
 - **(was #38)** No `AbortController` in `apiService.ts`.
 - **Dead files from the App Runner era:** `backend/Dockerfile.prod`, `frontend/Dockerfile.prod`,
