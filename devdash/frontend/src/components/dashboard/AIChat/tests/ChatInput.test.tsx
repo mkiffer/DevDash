@@ -65,7 +65,7 @@ describe('ChatInput', () => {
     expect(textarea).toHaveValue('');
   });
 
-    it('should send add new line if shift + enter key is pressed', () => {
+  it('should not send, and should allow a newline, if shift + enter is pressed', () => {
 
     const onSendMock = vi.fn();
     render(<ChatInput onSend={onSendMock} />);
@@ -73,10 +73,16 @@ describe('ChatInput', () => {
     const textarea = screen.getByPlaceholderText('Type your message...');
 
     fireEvent.change(textarea, { target: { value: 'Hello, world!' } });
-    fireEvent.keyDown(textarea, {key: 'Enter', shiftKey: true});
+    const notCancelled = fireEvent.keyDown(textarea, {key: 'Enter', shiftKey: true});
 
     expect(onSendMock).not.toHaveBeenCalled();
-    expect(textarea).toHaveValue('Hello, world!\n');
+    // The component's contract is to leave shift+enter alone so the browser
+    // inserts the newline itself. fireEvent returns false when preventDefault
+    // was called, so this asserts the default was allowed through. Asserting
+    // the textarea value instead would not work: fireEvent dispatches a
+    // synthetic event and never performs the native text insertion.
+    expect(notCancelled).toBe(true);
+    expect(textarea).toHaveValue('Hello, world!');
   });
 
 
