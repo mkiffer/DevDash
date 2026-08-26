@@ -9,7 +9,7 @@ class ChatSession(Base):
     
 
     id = Column(String, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable = True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     
@@ -26,7 +26,7 @@ class ChatMessage(Base):
     
     id = Column(Integer, primary_key=True)
     session_id = Column(String, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     role = Column(String, nullable=False)  # 'user' or 'assistant'
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)

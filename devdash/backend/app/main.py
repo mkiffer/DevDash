@@ -1,10 +1,16 @@
-from fastapi import FastAPI, Request
+import logging
+
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 from app.routes import stack_overflow, chat, auth, coding_problems
-from app.database.session import engine, Base
+from app.database.session import engine, Base, get_db
 from app.core.config import settings
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,3 +62,31 @@ app.include_router(coding_problems.router, prefix="/api/v1/coding", tags=["probl
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the DevDash API"}
+
+
+@app.get("/api/v1/health")
+def health_check(db: Session = Depends(get_db)):
+    """
+    Liveness plus a real database round trip, for the post-deploy smoke check.
+
+    The two failure modes this has to tell apart are the ones that have actually
+    happened: the Lambda itself being unable to start (in which case nothing
+    answers at all), and the app being up but unable to reach Neon. So this does
+    not just return a literal — it issues a query and reports 503 with the
+    database marked unreachable if that fails.
+
+    Left behind the X-Origin-Verify middleware on purpose: the smoke check calls
+    it through CloudFront, so a 200 here also proves the CDN path works, which is
+    the leg that broke last time.
+    """
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        # Logged rather than returned — the client gets a status, not a stack trace.
+        logger.exception("Health check failed: database unreachable")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "database": "unreachable"},
+        )
+
+    return {"status": "healthy", "database": "ok"}

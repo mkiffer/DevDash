@@ -29,6 +29,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: devdash/backend/requirements.txt
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -54,6 +61,17 @@ jobs:
           # Set the image URI as an output for the deploy step
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Apply database migrations
+        env:
+          # Expand the schema before the new code goes live, so the running
+          # function never sees a database it is newer than.
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          SECRET_KEY: unused-migrations-only
+        working-directory: ./devdash/backend
+        run: |
+          pip install -r requirements.txt
+          alembic upgrade head
+
       - name: Deploy new image to Lambda
         env:
           ECR_REGISTRY: 566362508363.dkr.ecr.ap-southeast-2.amazonaws.com
@@ -68,3 +86,26 @@ jobs:
             --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           aws lambda wait function-updated \
             --function-name $LAMBDA_FUNCTION_NAME
+
+      - name: Smoke check the deployed API
+        env:
+          # The distribution's own domain, not the custom one: devdash.online is
+          # still parked at GoDaddy and never reaches CloudFront, so testing it
+          # would prove nothing. Hardcoded rather than resolved via
+          # `aws cloudfront get-distribution` because the deploy credentials carry
+          # only Lambda and ECR permissions — and this value is public anyway.
+          DOMAIN: d1tr0wrli0bzj3.cloudfront.net
+        run: |
+          # Call through CloudFront, not the API Gateway URL directly: the origin
+          # guard needs the X-Origin-Verify header that CloudFront injects, so a
+          # 200 here also proves the CDN path works — the leg that broke before.
+          #
+          # --retry covers the cold start after a function update (~2s init), and
+          # --fail turns any non-2xx into a non-zero exit so the job goes red. A
+          # deploy that builds, pushes and updates but does not serve is a failed
+          # deploy, and until now nothing said so.
+          echo "Smoke checking https://$DOMAIN/api/v1/health"
+          curl --fail --silent --show-error \
+               --retry 5 --retry-delay 5 --retry-all-errors \
+               --max-time 30 \
+               "https://$DOMAIN/api/v1/health"
