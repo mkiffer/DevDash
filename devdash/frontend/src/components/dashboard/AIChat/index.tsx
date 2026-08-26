@@ -1,5 +1,5 @@
 // components/dashboard/AIChat/index.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage, ChatSessionPreview } from '../../../types';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -20,42 +20,7 @@ export const AIChat: React.FC = () => {
   const isInitialMount = useRef(true);
 
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      loadSessions();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeSessionId) {
-      loadSessionMessages(activeSessionId);
-    } else {
-      setMessages([]);
-    }
-  }, [activeSessionId]);
-
-  const loadSessions = async () => {
-    setIsLoading(true);
-    try {
-      const response = await chatService.listSessions();
-      const sessionsList = response.data?.sessions || [];
-      setSessions(sessionsList);
-      
-      if (sessionsList.length > 0 && !activeSessionId) {
-        setActiveSessionId(sessionsList[0].id);
-      } else if (sessionsList.length === 0) {
-        handleCreateSession(); 
-      }
-    } catch (error) {
-      console.error('Error loading sessions:', error);
-      toast({ title: "Error", description: "Failed to load chat sessions", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadSessionMessages = async (sessionId: string) => {
+  const loadSessionMessages = useCallback(async (sessionId: string) => {
     setIsLoading(true);
     try {
       const response = await chatService.getSession(sessionId);
@@ -66,23 +31,23 @@ export const AIChat: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const handleCreateSession = async () => {
+  }, [toast]);
+
+  const handleCreateSession = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await chatService.createSession();
       const sessionData = response.data;
-      
+
       // Create a preview for the new session to add to the list
       const newSessionPreview: ChatSessionPreview = {
         id: sessionData.session_id,
-        user_id: sessionData.user_id, 
-        created_at: new Date(sessionData.created_at), 
+        user_id: sessionData.user_id,
+        created_at: new Date(sessionData.created_at),
         updated_at: new Date(sessionData.created_at),
-        preview: "New Conversation" 
+        preview: "New Conversation"
       };
-      
+
       setSessions(prev => [newSessionPreview, ...prev]);
       setActiveSessionId(newSessionPreview.id);
       setMessages([]);
@@ -93,7 +58,50 @@ export const AIChat: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  const loadSessions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await chatService.listSessions();
+      const sessionsList = response.data?.sessions || [];
+      setSessions(sessionsList);
+
+      if (sessionsList.length > 0) {
+        // Functional form so this does not need to read activeSessionId, which
+        // would otherwise churn the callback identity on every session switch.
+        setActiveSessionId(prev => prev ?? sessionsList[0].id);
+      } else {
+        handleCreateSession();
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+      toast({ title: "Error", description: "Failed to load chat sessions", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast, handleCreateSession]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      loadSessions();
+    }
+  }, [loadSessions]);
+
+  // Clearing messages when there is no active session happens in
+  // handleDeleteSession, the only place that unsets it — an effect would be a
+  // cascading render.
+  useEffect(() => {
+    if (activeSessionId) {
+      // Fetching the messages for the selected session is a genuine
+      // external-system sync, but it raises the loading flag before the request
+      // starts and the rule traces that synchronous setState through the call
+      // graph. See the same note in CodingChallenges.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadSessionMessages(activeSessionId);
+    }
+  }, [activeSessionId, loadSessionMessages]);
 
   const handleDeleteSession = async (sessionId: string) => {
     if (!window.confirm('Are you sure you want to delete this chat session?')) {
@@ -110,7 +118,12 @@ export const AIChat: React.FC = () => {
       setSessions(sessionsList);
       
       if (activeSessionId === sessionId) {
-        setActiveSessionId(sessionsList.length > 0 ? sessionsList[0].id : null);
+        if (sessionsList.length > 0) {
+          setActiveSessionId(sessionsList[0].id);
+        } else {
+          setActiveSessionId(null);
+          setMessages([]);
+        }
       }
     } catch (error) {
       console.error(`Error deleting session ${sessionId}:`, error);

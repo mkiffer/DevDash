@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from "lucide-react";
@@ -16,27 +16,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   isLoading
 }) => {
-  // Local state to track input value
-  const [inputValue, setInputValue] = useState(query);
-
-  // Update local state when prop changes
-  useEffect(() => {
-    setInputValue(query);
-  }, [query]);
-
+  // `query` is the single source of truth: every keystroke is forwarded to the
+  // parent via onQueryChange and comes straight back as the prop, so mirroring
+  // it into local state only added a cascading render.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Only trigger search if there's actual input
-    if (inputValue.trim()) {
+    if (query.trim()) {
       onSearch();
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setInputValue(newValue);
-    onQueryChange(newValue);
+    onQueryChange(e.target.value);
   };
 
   return (
@@ -44,7 +37,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <div className="flex-1 relative overflow-visible">
         <Input 
           type="text"
-          value={inputValue}
+          value={query}
           onChange={handleInputChange}
           placeholder="Search Stack Overflow..."
           className="pr-10 w-full z-10"
@@ -55,7 +48,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       
       <Button
         type="submit"
-        disabled={isLoading || !inputValue.trim()}
+        disabled={isLoading || !query.trim()}
         variant="default"
         className="min-w-[100px]"
       >

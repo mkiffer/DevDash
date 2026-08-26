@@ -53,7 +53,7 @@ export const StackOverflowSearch: React.FC = () => {
     };
 
     loadInitialQuestions();
-  }, []);
+  }, [toast]);
 
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);

@@ -1,5 +1,5 @@
 // devdash/frontend/src/components/dashboard/CodingChallenges/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SubmissionResult, CodingProblem, codingProblemService } from '@/services/codingProblemService';
 import { useToast } from '@/hooks/use-toast';
 import ChallengeToolbar from '@/components/dashboard/CodingChallenges/ChallengeToolbar';
@@ -24,11 +24,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadChallenges();
-  }, [selectedDifficulty]);
-
-  const loadChallenges = async () => {
+  const loadChallenges = useCallback(async () => {
     setIsLoading(true);
     try {
       const difficultyParam = selectedDifficulty === 'all' ? undefined : selectedDifficulty;
@@ -44,7 +40,17 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDifficulty, toast]);
+
+  useEffect(() => {
+    // Fetching on mount and whenever the difficulty filter changes is the
+    // legitimate "synchronize with an external system" case for an effect, but
+    // the request has to raise the loading flag before it starts, and the rule
+    // traces that synchronous setState through the call graph. Satisfying it
+    // would mean dropping the spinner or adopting a data-fetching library.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadChallenges();
+  }, [loadChallenges]);
 
   const loadChallenge = async (slug: string) => {
     setIsLoading(true);
