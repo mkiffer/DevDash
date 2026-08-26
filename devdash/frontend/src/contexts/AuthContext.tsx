@@ -1,5 +1,4 @@
 import React, {createContext, useState, useContext, useEffect} from 'react';
-import { API_BASE_URL } from '@/services/apiConfig';
 import {authService} from '@/services/authService';
 import {LoginRequest, RegisterRequest, User} from '@/types'
 

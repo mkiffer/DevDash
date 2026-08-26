@@ -1,5 +1,52 @@
 import { API_BASE_URL } from './apiConfig';
 
+const JSON_CONTENT_TYPE = 'application/json';
+
+/**
+ * Turns FastAPI's error shape into a readable message.
+ * Errors come back as {"detail": ...}, where detail is a string for ordinary
+ * HTTPExceptions but an array of objects for 422 validation failures.
+ */
+const describeError = (errorData: any, response: Response): string => {
+    const detail = errorData?.detail;
+
+    if (typeof detail === 'string') return detail;
+    if (detail) return JSON.stringify(detail);
+    if (typeof errorData?.message === 'string') return errorData.message;
+
+    return `API request failed: ${response.status} ${response.statusText}`;
+};
+
+/**
+ * Parses a response that is expected to carry a JSON body.
+ *
+ * The content-type guard matters as much as the status check: a CDN or proxy can
+ * return an HTML error page with a 200, which passes `response.ok` and then dies
+ * inside `response.json()` as an opaque "Unexpected token '<'" SyntaxError. That
+ * hides the real failure, so surface it explicitly instead.
+ */
+export const parseJsonResponse = async <T>(
+    response: Response,
+    endpoint: string
+): Promise<T> => {
+    const contentType = response.headers.get('content-type') ?? '';
+    const isJson = contentType.includes(JSON_CONTENT_TYPE);
+
+    if (!response.ok) {
+        const errorData = isJson ? await response.json().catch(() => null) : null;
+        throw new Error(describeError(errorData, response));
+    }
+
+    if (!isJson) {
+        throw new Error(
+            `Expected JSON from ${endpoint} but received "${contentType || 'no content-type'}" ` +
+            `with status ${response.status}. The API may be unreachable or misrouted.`
+        );
+    }
+
+    return response.json();
+};
+
 /**
  * Generic API request function with authentication
  * @param endpoint - API endpoint (without base URL)
@@ -37,22 +84,10 @@ export const apiRequest = async<T>(
         }
     }
 
-    //const fetchOptions = createAuthFetchOptions(options);
-
     try{
         const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
 
-        if (!response.ok){
-
-
-            const errorData = await response.json().catch(()=> null);
-            throw new Error(
-                errorData?.message ||
-                `API request failed: ${response.status} ${response.statusText}`);
-            
-        } 
-
-        return response.json();
+        return await parseJsonResponse<T>(response, endpoint);
     } catch(error){
         console.error(`API request error for ${endpoint}:`, error);
         throw error;

@@ -1,6 +1,5 @@
 // services/aiChatService.ts
-import { ChatMessage, APIResponse, ChatSession } from '../types';
-import { API_BASE_URL } from './apiConfig';
+import { APIResponse, ChatSession } from '../types';
 import { apiRequest } from './apiService';
 
 import {

@@ -1,5 +1,6 @@
 import { APIResponse } from '../types';
 import { API_BASE_URL } from './apiConfig';
+import { parseJsonResponse } from './apiService';
 
 export interface CodingProblem {
   id: number;
@@ -46,14 +47,14 @@ export const codingProblemService = {
 
             const response = await fetch(url);
 
-            if (!response.ok){
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const responseData = await response.json();
+            const responseData = await parseJsonResponse<
+                { data?: CodingProblem[] } | CodingProblem[]
+            >(response, '/coding/problems');
 
             //handle response formats
-            const problemsArray = responseData.data || responseData;
+            const problemsArray = Array.isArray(responseData)
+                ? responseData
+                : responseData.data ?? [];
 
             return {
                 data: problemsArray, 
@@ -71,11 +72,7 @@ export const codingProblemService = {
         try{
             const response = await fetch(`${API_BASE_URL}/coding/problems/${slug}`);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-              }
-              
-              const data = await response.json();
+            const data = await parseJsonResponse<CodingProblem>(response, `/coding/problems/${slug}`);
               return {
                 data,
                 status: response.status
@@ -103,11 +100,7 @@ export const codingProblemService = {
               }),
             });
             
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
+            const data = await parseJsonResponse<SubmissionResult>(response, `/coding/problems/${slug}/submit`);
             return {
               data,
               status: response.status

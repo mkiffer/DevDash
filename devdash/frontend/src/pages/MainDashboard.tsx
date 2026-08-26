@@ -24,7 +24,7 @@ const GuestAIChatPrompt = () => (
 
 const DashboardLayout: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { logout, isAuthenticated, isGuest } = useAuth();
+  const { logout, isGuest } = useAuth();
 
   useEffect(() => {
     if (isDarkMode) {

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DevDash is a full-stack developer dashboard with AI chat (Anthropic Claude), coding challenges (Judge0 execution), and Stack Overflow search. React/TypeScript frontend + FastAPI/Python backend, deployed to AWS (S3+CloudFront frontend, ECR+App Runner backend).
+DevDash is a full-stack developer dashboard with AI chat (Anthropic Claude), coding challenges (Judge0 execution), and Stack Overflow search. React/TypeScript frontend + FastAPI/Python backend, deployed to AWS (S3+CloudFront frontend; API Gateway + Lambda container image backend, with Neon Postgres).
 
 ## Monorepo Structure
 
@@ -46,14 +46,14 @@ alembic upgrade head                                # Apply migrations
 JWT tokens stored in HttpOnly cookies. Backend validates via `get_current_user()` dependency (`app/dependencies.py`). Frontend's `AuthContext` manages auth state; all API calls use `credentials: 'include'` via the `apiRequest()` wrapper in `services/apiService.ts`.
 
 ### Frontend API Layer
-All backend calls go through `apiRequest()` in `src/services/apiService.ts`, which handles credentials and error responses. API base URL is set via `VITE_API_BASE_URL` env var (defaults to `http://localhost:8080/api/v1`).
+Most backend calls go through `apiRequest()` in `src/services/apiService.ts`, which handles credentials and error responses. `codingProblemService.ts` is the exception: it calls `fetch` directly, but shares `parseJsonResponse()` from `apiService.ts` so it gets the same status/content-type handling. API base URL is set via `VITE_API_BASE_URL` env var (defaults to `http://localhost:8080/api/v1`).
 
 ### Backend API Routes
 All routes are prefixed with `/api/v1/`:
 - `/auth/` — register, token, logout, me
 - `/chat/` — session CRUD + message handling (calls AIService for assistant responses)
-- `/coding-problems/` — problem retrieval + Judge0 code submission
-- `/stack-overflow/` — Stack Exchange API proxy
+- `/coding/` — problem retrieval + Judge0 code submission
+- `/stackoverflow/` — Stack Exchange API proxy
 
 ### Database
 PostgreSQL in production, SQLite in-memory for tests. Models: User, ChatSession, ChatMessage, CodingProblem. Test fixtures in `app/tests/conftest.py` override the `get_db` dependency.

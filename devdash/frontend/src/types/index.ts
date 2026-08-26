@@ -14,14 +14,17 @@ export interface CodeProblem {
   
 
   
+  // Shape returned by the Stack Exchange API, proxied via /api/v1/stackoverflow/*.
+  // creation_date is a Unix timestamp in SECONDS (multiply by 1000 for a JS Date).
   export interface StackOverflowResult {
     question_id: number;
     title: string;
-    body: string
+    body: string;
     score: number;
     answer_count: number;
-    tags?: string[];
+    tags: string[];
     link: string;
+    creation_date: number;
   }
   
   // API Response Types

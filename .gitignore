@@ -209,3 +209,7 @@ docker-compose.yml
 seed_user.py
 test.db
 .ini
+
+# Private ops runbook — contains live AWS/Neon identifiers, IAM principal names
+# and open security items. Deliberately NOT committed (repo is public).
+AWS_MIGRATION_NOTES.md

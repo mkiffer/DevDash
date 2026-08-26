@@ -8,7 +8,6 @@ import { chatService } from '../../../services/aiChatService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

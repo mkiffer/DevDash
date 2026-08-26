@@ -41,7 +41,8 @@ export const mockStackOverflowResults: StackOverflowResult[] = [
     score: 15342,
     answer_count: 42,
     tags: ["html", "css", "flexbox", "centering", "css-layout"],
-    link: "https://stackoverflow.com/questions/503093/how-to-center-a-div"
+    link: "https://stackoverflow.com/questions/503093/how-to-center-a-div",
+    creation_date: 1234567890
   },
   {
     question_id: 4037212,
@@ -50,7 +51,8 @@ export const mockStackOverflowResults: StackOverflowResult[] = [
     score: 2891,
     answer_count: 16,
     tags: ["javascript", "reactjs", "hooks", "useeffect"],
-    link: "https://stackoverflow.com/questions/4037212/react-useeffect-calling-twice"
+    link: "https://stackoverflow.com/questions/4037212/react-useeffect-calling-twice",
+    creation_date: 1478000000
   },
   {
     question_id: 7157999,
@@ -59,7 +61,8 @@ export const mockStackOverflowResults: StackOverflowResult[] = [
     score: 1234,
     answer_count: 8,
     tags: ["python", "fastapi", "environment-variables", "configuration"],
-    link: "https://stackoverflow.com/questions/7157999/python-environment-variables-fastapi"
+    link: "https://stackoverflow.com/questions/7157999/python-environment-variables-fastapi",
+    creation_date: 1596000000
   },
   {
     question_id: 6089972,
@@ -68,7 +71,8 @@ export const mockStackOverflowResults: StackOverflowResult[] = [
     score: 892,
     answer_count: 12,
     tags: ["css", "tailwindcss", "responsive-design"],
-    link: "https://stackoverflow.com/questions/6089972/tailwind-responsive-breakpoints"
+    link: "https://stackoverflow.com/questions/6089972/tailwind-responsive-breakpoints",
+    creation_date: 1625000000
   },
   {
     question_id: 9012385,
@@ -77,6 +81,7 @@ export const mockStackOverflowResults: StackOverflowResult[] = [
     score: 3456,
     answer_count: 25,
     tags: ["typescript", "interface", "type-system"],
-    link: "https://stackoverflow.com/questions/9012385/typescript-interface-vs-type"
+    link: "https://stackoverflow.com/questions/9012385/typescript-interface-vs-type",
+    creation_date: 1660000000
   }
 ];

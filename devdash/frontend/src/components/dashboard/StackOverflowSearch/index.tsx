@@ -3,20 +3,9 @@ import { SearchBar } from './SearchBar';
 import { ResultList } from './ResultList';
 import { searchStackOverflow, getQuestionAnswers } from '../../../services/stackOverflowService';
 import { StackOverflowResult } from '../../../types';
-import { mockStackOverflowResults } from '../../../utils/mockData';
 import { AnswerView } from './AnswerView';
 import { useToast } from '@/hooks/use-toast';
 //import { data } from 'react-router-dom';
-
-interface StackOverflowQuestion {
-  question_id: number;
-  title: string;
-  body: string;
-  score: number;
-  answer_count: number;
-  tags: string[];
-  link: string;
-}
 
 interface Answer {
   answer_id: number;
@@ -38,7 +27,7 @@ interface SelectedQuestion {
 
 export const StackOverflowSearch: React.FC = () => {
   const [query, setQuery] = useState<string>('');
-  const [results, setResults] = useState<StackOverflowQuestion[]>([]);
+  const [results, setResults] = useState<StackOverflowResult[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedQuestion, setSelectedQuestion] = useState<SelectedQuestion | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);

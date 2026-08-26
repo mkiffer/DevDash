@@ -7,17 +7,7 @@ import { ExternalLink, MessageSquare } from 'lucide-react';
 import DOMPurify from 'dompurify';
 // 1. Import 'parse' and helpers from html-react-parser
 import parse, { domToReact, HTMLReactParserOptions, Element, DOMNode } from 'html-react-parser';
-
-interface StackOverflowResult {
-  question_id: number;
-  title: string;
-  body: string;
-  score: number;
-  answer_count: number;
-  tags: string[];
-  link: string;
-  creation_date: string;
-}
+import { StackOverflowResult } from '@/types';
 
 interface ResultListProps {
   results: StackOverflowResult[];
@@ -86,7 +76,7 @@ export const ResultList: React.FC<ResultListProps> = ({ results, onQuestionSelec
                     </div>
                     
                     <div className="mt-2 text-xs text-gray-500">
-                      Posted: {new Date(result.creation_date).toLocaleDateString()}
+                      Posted: {new Date(result.creation_date * 1000).toLocaleDateString()}
                     </div>
                   </CardContent>
 

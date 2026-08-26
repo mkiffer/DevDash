@@ -1,4 +1,3 @@
-import { API_BASE_URL } from "./apiConfig";
 import {apiRequest} from "./apiService"
 
 export interface User {

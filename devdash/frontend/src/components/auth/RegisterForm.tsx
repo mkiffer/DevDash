@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
 
 export const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState('');
