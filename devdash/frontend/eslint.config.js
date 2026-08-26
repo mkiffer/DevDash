@@ -19,10 +19,25 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Destructuring a prop purely to keep it out of a `...rest` spread is
+      // deliberate; the core rule defaults ignoreRestSiblings to false.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { ignoreRestSiblings: true },
+      ],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
+    },
+  },
+  {
+    // Vendored shadcn/ui primitives. These pair a component with its `cva`
+    // variants export, which `allowConstantExport` does not cover because
+    // `cva(...)` is a call rather than a constant literal.
+    files: ['src/components/ui/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 )
