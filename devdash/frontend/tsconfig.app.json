@@ -3,7 +3,10 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // ES2022.Error supplies the Error `cause` option, which preserve-caught-error
+    // requires when rethrowing. It is a runtime API, so an ES2020 target emits it
+    // unchanged; every browser we support has it.
+    "lib": ["ES2020", "ES2022.Error", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
 

@@ -56,15 +56,6 @@ export interface CodeProblem {
     isLoading?: boolean;
   }
 
-  export interface APIResponse<T = any> {
-    data: T;
-    status: number;
-    message?: string;
-  }
-  
-  
-
-  
   // Props for the chat input component
   export interface ChatInputProps {
     onSend: (message: string) => void;

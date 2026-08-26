@@ -2,7 +2,7 @@ import './App.css'
 import DashboardLayout from './pages/MainDashboard'
 import { AuthProvider } from './contexts/AuthContext'
 import LoginPage from './pages/LoginPage'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth } from './contexts/auth-context'
 import {Toaster} from "./components/ui/toaster"
 
 // Auth wrapper component

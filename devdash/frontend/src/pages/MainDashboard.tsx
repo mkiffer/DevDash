@@ -6,7 +6,7 @@ import { StackOverflowSearch } from '../components/dashboard/StackOverflowSearch
 import { CodingProblemComponent } from '../components/dashboard/CodingChallenges/index'
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { Button } from '@/components/ui/button';
 
 const GuestAIChatPrompt = () => (

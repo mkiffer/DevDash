@@ -1,13 +1,13 @@
 // mkiffer/devdash/DevDash-481fb7860a2af2f6654500d4175c6f63f23cc3a7/devdash/frontend/src/components/dashboard/CodingChallenges/CodeEditor/CodeEditor.tsx
 import React from 'react';
-import Editor from '@monaco-editor/react';
+import Editor, { type EditorProps } from '@monaco-editor/react';
 
 interface CodeEditorProps {
   code: string;
   onChange: (value: string) => void;
   language: string;
   isDarkMode: boolean;
-  options: any;
+  options: EditorProps['options'];
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, isDarkMode, options }) => {
