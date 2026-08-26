@@ -1,171 +1,221 @@
 # Open Questions and Concerns
 
-Analysis of the DevDash codebase as of 2026-03-22.
+Re-audited **2026-08-26** against `main`. The previous revision of this file was written
+2026-03-22 against the **App Runner + RDS + Docker Compose** stack, which no longer exists.
+Every item below was re-verified against the current architecture:
+
+```
+Browser → CloudFront ─/api/v1/*─→ API Gateway (HTTP API) → Lambda (container) → Neon Postgres
+                     └─/*───────→ S3 (static frontend)
+```
+
+Original item numbers are preserved as `(was #N)` so this file can be diffed against the old one.
+Infrastructure history, the secrets correction, and the image-pin outage post-mortem live in
+[AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md) and are not duplicated here.
 
 ---
 
-## Critical
+## Fixed in this pass (2026-08-26)
 
-### 1. Committed Secrets in `.env`
-Real API keys (Anthropic, Judge0, Stack Exchange) and database passwords are tracked in git at `devdash/.env`. Even though `.gitignore` lists `.env`, the file is already committed and in git history. **All credentials need immediate rotation.**
+### Retired Claude model — the AI chat was broken in production
+`ai_service.py` pinned `claude-3-opus-20240229`, which the API now rejects:
+`404 not_found_error: model: claude-3-opus-20240229`. **Every chat message was returning a 500.**
+This was never in the old document.
 
-### 2. Port Mismatch Between Docker Configs
-- `devdash/backend/dockerfile` exposes port 8080
-- `devdash/backend/Dockerfile.prod` exposes port 8000
-- `.env` and `nginx.conf` expect port 8080
-- CI/CD references `Dockerfile` (capitalized, which may not match the lowercase `dockerfile`)
+Fixed: model is now `claude-opus-5`, the `anthropic` SDK pin moved `0.16.0` → `1.0.0`, and the
+removed `temperature` parameter was dropped (it is rejected on current models). Response parsing
+now selects text blocks by type instead of indexing `content[0]`, which is not necessarily a text
+block once thinking is enabled. Verified end to end against the live API: 4.6s round trip.
 
-This will cause deployment failures. Needs standardization.
+Two things to know about the tuning in that file:
+- `effort` is set to `low` and `max_tokens` to 2048 deliberately. **API Gateway HTTP APIs cap the
+  integration timeout at 30 seconds**, and that ceiling cannot be raised by changing the Lambda
+  timeout. Slower settings would surface to users as 504s.
+- Streaming is the real fix for that constraint, but it needs SSE support through API Gateway,
+  Mangum, and the frontend. Listed under **Medium** below.
 
-### 3. No Tests in CI/CD
-Neither `deploy-backend.yml` nor `deploy-frontend.yml` runs tests before deploying. Broken code can reach production unchecked.
+### Alembic chain could not build a database *(was #34, subsumes #4)*
+Worse than the old document described. The chain was unrunnable:
+- `4ba4db1742f4_initial_schema.py` was `pass` in both directions — it created nothing.
+- No migration anywhere created `user`, `chat_sessions`, or `chat_messages`.
+- The next revision, `f87f8d7ffe4b`, ran `ALTER TABLE chat_messages ADD COLUMN user_id` against a
+  table that never existed. Confirmed: `alembic upgrade head` on an empty database died with
+  `UndefinedTable: relation "chat_messages" does not exist`.
+- The Neon schema existed only because `Base.metadata.create_all` was run by hand during the
+  migration, and that safety net is gone at runtime — `lambda_handler.py` sets `lifespan="off"`.
 
-### 4. No Database Migrations in CI/CD
-Neither workflow runs `alembic upgrade head`. Schema changes won't be applied on deployment.
+So there was **no path to apply a schema change to production** and no way to stand up a fresh
+database.
 
----
+Fixed: the eight broken revisions were replaced by one squashed baseline,
+`ab8baf0c14ff_baseline_schema.py`. Verified against a scratch Postgres: `upgrade head` from empty
+creates all four tables with their indexes and foreign keys, `alembic check` reports no drift from
+the models, and `downgrade base` reverses cleanly. A `pg_dump` diff confirms the baseline produces
+a schema **identical** to what `create_all` produced, so existing databases join the chain by
+stamping, not rebuilding. The stale hardcoded URL in `alembic.ini` was blanked (`env.py` sets it
+from settings).
 
-## Security
-
-### 5. XSS in ChallengeDetails
-`ChallengeDetails.tsx:31` uses `dangerouslySetInnerHTML` without sanitization. The SO search components correctly use DOMPurify — this should too.
-
-### 6. Internal Exception Details Leaked to Clients
-Multiple backend routes return `str(e)` in HTTP error responses (e.g., `chat.py:48-53`, `coding_problems.py:170`, `stack_overflow.py:59-71`). Should return generic messages and log details server-side.
-
-### 7. Overly Permissive CORS
-`main.py:27-33` allows `methods=["*"]` and `headers=["*"]`. Should be restricted to actually used methods/headers.
-
-### 8. No Rate Limiting
-No rate limiting anywhere in the backend. AI chat endpoint is especially vulnerable to abuse and cost runaway.
-
-### 9. No CSRF Protection
-Cookie-based JWT auth with `samesite="none"` in production but no CSRF token validation.
-
-### 10. Nullable `user_id` Foreign Keys
-`ChatSession.user_id` and `ChatMessage.user_id` are `nullable=True` (`models/chat.py:12,29`). Allows orphaned records and bypasses data integrity.
-
----
-
-## Authentication & Authorization
-
-### 11. No Password or Email Validation on Registration
-`auth.py` accepts any string for password and email — no minimum length, complexity, or format check. Should use Pydantic's `EmailStr` and `Field(min_length=...)`.
-
-### 12. No Token Refresh Mechanism
-Frontend has no refresh token logic. When JWT expires, users are silently logged out with no recovery. `apiService.ts` doesn't intercept 401s to attempt re-auth.
-
-### 13. Duplicate OAuth2 Schemes
-Two `OAuth2PasswordBearer` instances with different token URLs exist in `auth/utils.py:18` and `dependencies.py:11-13`.
-
-### 14. Coding Problems Endpoints Are Unauthenticated
-All routes in `coding_problems.py` are public — no `get_current_user` dependency.
+> **⚠️ One action still outstanding:** production Neon has no `alembic_version` row. Until
+> `alembic stamp ab8baf0c14ff` is run against it, `alembic upgrade head` would try to re-create
+> existing tables. Run this before wiring migrations into CI.
 
 ---
 
-## Frontend Bugs
+## Resolved or no longer applicable
 
-### 15. RegisterForm Loading State Never Activates
-`RegisterForm.tsx:31` has `setIsLoading(true)` commented out, but `finally` block sets it to false. Button never shows loading state.
+Recorded so they don't get re-raised.
 
-### 16. Duplicate "Register" Button in LoginForm
-`LoginForm.tsx:73-75` has a second submit button labeled "Register" inside the login form.
-
-### 17. Optimistic Message IDs Use `Math.random()`
-`AIChat/index.tsx:127-160` generates temporary message IDs with `Math.random()`, which isn't guaranteed unique and could cause filtering issues.
-
-### 18. Prop Typo: `isLangaugeSupported`
-Misspelled in `CodingChallenges/index.tsx:168` and `SolutionEditor.tsx:15,25,72`.
-
-### 19. Function Name Typo: `sanititize_user_code`
-`coding_problems.py:175` — should be `sanitize_user_code`.
-
-### 20. Invalid Tailwind Class
-`SearchBar.tsx:43` uses `p-[1-px]` which is not valid Tailwind syntax.
-
-### 21. Empty useEffect
-`StackOverflowSearch/index.tsx:118-119` has an empty `useEffect` that does nothing.
+| Was # | Item | Status |
+|---|---|---|
+| 1 | Committed secrets in `.env` | **False premise.** The only `.env*` ever committed is `backend/.env.example` (placeholders). `devdash/.env` has never been tracked and is gitignored. Full-history scans found nothing. See the correction in [AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md). Key rotation is still worth doing as hygiene — tracked there as TODO #1 — but it is not incident response. |
+| 2 | Docker port mismatch (8000 vs 8080) | **Moot.** The backend is a Lambda container image: no `EXPOSE`, `CMD ["app.lambda_handler.handler"]`. CI builds `-f devdash/backend/dockerfile` explicitly. |
+| 29 | Unused `axios` import in `RegisterForm` | Removed. |
+| 33 | Frontend nginx config not applied | **Moot.** The frontend is S3 + CloudFront. `frontend/Dockerfile.prod` and `nginx.conf` are dead files. |
+| 40 | No connection-pool configuration | **Fixed and documented.** `database/session.py` uses `NullPool` + `pool_pre_ping` — correct for Lambda against Neon's pooler. |
+| 23 (part) | `print()` at `coding_problems.py:220` | **False positive.** That line is inside the generated Judge0 test-runner source string. It must stay. |
+| 22 (part) | Inconsistent API layers | Partly closed: `codingProblemService` now shares `parseJsonResponse()` with `apiService`. `stackOverflowService` still uses axios, but those endpoints are unauthenticated and same-origin behind CloudFront, so there is no functional bug — demoted to style. |
 
 ---
 
-## Code Quality
+## High
 
-### 22. Three Different API Call Patterns in Frontend
-- `apiRequest()` (fetch + credentials) in auth/chat services
-- `axios.get()` in `stackOverflowService.ts` (missing `credentials: 'include'`, so cookies won't be sent)
-- Raw `fetch()` in `codingProblemService.ts`
+### No tests, no migrations, and no smoke check in CI *(was #3, #4, #31)*
+Neither workflow runs tests, applies migrations, or verifies the deploy actually works. The concrete
+argument is in the history: the Lambda sat in `State: Inactive` for roughly eight days returning 500s
+on every call, and nothing noticed. A post-deploy smoke check would have caught it the same day.
 
-Should consolidate to one pattern.
+These belong together because the smoke check needs something to call:
+- Add a `/health` endpoint to `main.py` reporting app + database reachability.
+- `deploy-backend.yml`: run `pytest` before build; `alembic upgrade head` after the Lambda update;
+  `curl` the health endpoint **through CloudFront** and fail the job on non-200.
+- `deploy-frontend.yml`: run `npm run test -- --run` and `npm run build`.
+- Add `pull_request` triggers to both — today they only run on push to `main`, so nothing is
+  checked before merge.
 
-### 23. `print()` Statements Instead of Logging
-Backend uses `print()` in `auth.py:74,107`, `stack_overflow.py:66-67`, `coding_problems.py:220`. Only `stack_overflow.py` uses the `logging` module. No structured logging framework.
+### No rate limiting or AI cost controls *(was #8, #39)*
+Nothing rate-limits anything. Two specific exposures:
+- `POST /coding/problems/{slug}/submit` is **unauthenticated** and spends the account's Judge0 quota
+  on every call. See the Q2 decision below — the agreed fix is an IP-based rate limit, not auth.
+- The chat endpoint is behind auth but has no per-user or per-session token budget.
 
-### 24. Bare `except Exception` Throughout Backend
-Generic exception catching in `ai_service.py:37`, all chat routes, and `coding_problems.py:170`. Masks real errors.
+### Internal exception details returned to clients *(was #6)*
+`str(e)` is still returned in every `chat.py` handler, at `coding_problems.py:172`, and at
+`stack_overflow.py:57-70`. Should be a generic message to the client plus `logger.exception`
+server-side. Worth doing together with the `print()` cleanup below, since both need a logging setup.
 
-### 25. Deprecated `datetime.utcnow()`
-Used in `auth/utils.py:29,31`, `models/chat.py:13-14,32`, `models/user.py:14`. Deprecated in Python 3.12+; should use `datetime.now(timezone.utc)`.
-
-### 26. Duplicate Type Definitions in Frontend
-`types/index.ts` has duplicate definitions for `APIResponse<T>` and `ChatInputProps`.
-
-### 27. Excessive `any` Types
-Found in `LoginForm.tsx:33`, `CodeEditor.tsx:10`, `apiService.ts:13`, `codingProblemService.ts:11-12,23-25`, `stackOverflowService.ts:7`.
-
-### 28. Debug `console.log` Left in Production Code
-`apiConfig.ts:6` logs the API base URL on every import.
-
-### 29. Unused Import
-`RegisterForm.tsx:7` imports `axios` but uses `authService` instead.
-
----
-
-## Infrastructure & Deployment
-
-### 30. Empty `docker-compose.prod.yml`
-File exists at `devdash/docker-compose.prod.yml` but is 0 bytes.
-
-### 31. No Health Check Endpoint
-No `/health` or `/ping` endpoint in the backend. No `HEALTHCHECK` in Dockerfiles. AWS App Runner uses default health checks.
-
-### 32. No Monitoring or Error Tracking
-No Sentry, CloudWatch integration, or structured logging configured for production.
-
-### 33. Frontend Nginx Config Not Applied in Production
-`Dockerfile.prod:27` has the nginx config COPY commented out. Custom caching/compression rules in `nginx.conf` aren't used.
-
-### 34. Initial Alembic Migration Is Empty
-`migrations/versions/4ba4db1742f4_initial_schema.py` has `pass` in both upgrade and downgrade.
-
-### 35. Hardcoded DB URL in `alembic.ini`
-`alembic.ini:66` has `postgresql://devdash:devdash_password@db:5432/devdash` (though `env.py` overrides it from settings).
+### No password or email validation on registration *(was #11)*
+`UserCreate` takes bare `str` for email and password — no format check, no length floor.
+Note the fix needs `email-validator` added to `requirements.txt` before `EmailStr` will work.
 
 ---
 
-## Missing Capabilities
+## Medium
 
-### 36. No Error Boundaries in React
-A single component crash takes down the entire app.
+### CSRF *(was #9)*
+Cheaper to close now than when first written. The frontend and API are same-origin behind CloudFront
+(`VITE_API_BASE_URL=/api/v1`), so `samesite="none"` in `auth.py` is no longer necessary. Switching to
+`lax` closes most of the gap in one line.
 
-### 37. No Accessibility (a11y)
-Almost zero `aria-*` attributes across the entire frontend. No keyboard navigation support for custom components.
+### Chat has no streaming
+Not in the old document. Non-streaming responses are structurally capped by API Gateway's 30s
+integration timeout, which is why `ai_service.py` runs at `effort: "low"`. Streaming would remove the
+ceiling and improve perceived latency, at the cost of SSE plumbing through API Gateway, Mangum, and
+the frontend.
 
-### 38. No Request Cancellation
-`apiService.ts` doesn't use `AbortController`. Navigating away leaves stale requests that can update unmounted components.
+### Overly permissive CORS *(was #7)*
+Origins are env-driven, but `allow_methods=["*"]` and `allow_headers=["*"]` remain in `main.py`.
 
-### 39. No AI Cost Controls
-No per-user or per-session token limits on the chat endpoint. A single user can exhaust the Anthropic API budget.
+### `dangerouslySetInnerHTML` in ChallengeDetails *(was #5)*
+Real XSS risk is **low** — descriptions are admin-seeded by `scripts/seed_problems.py`, not user
+input. But it is also a **rendering bug**: those descriptions are Markdown being injected as raw HTML.
+Fix both by reusing the existing `components/shared/MarkdownRenderer.tsx`, the same component
+`MessageList` already uses.
 
-### 40. No Connection Pool Configuration
-`database/session.py` calls `create_engine()` without pool size, max overflow, or timeout settings.
+### `sanititize_user_code` is a no-op
+Not in the old document. `coding_problems.py:175-177` does
+`code.replace('"""', '\"\"\"')` — in Python `\"` *is* `"`, so both replacements return the string
+unchanged. User code is interpolated into an f-string template, so a submission containing `"""`
+breaks the test runner. Judge0 sandboxes execution, so this is a correctness bug and fake
+reassurance, not host RCE. (The name is also misspelled — was #19.)
+
+### No token refresh *(was #12)*
+30-minute expiry, and `apiService.ts` never intercepts a 401. Users are dropped to the login screen
+mid-session with no recovery. See Q3.
+
+### Backend hygiene pass *(was #23, #24, #25)*
+All still present, and best done as one change since they overlap:
+- `print()` in `auth.py:74,107` and `stack_overflow.py:66-67`; no logging configuration anywhere.
+- Bare `except Exception` throughout the chat routes and `coding_problems.py`.
+- `datetime.utcnow()` in `auth/utils.py`, `models/chat.py`, `routes/chat.py:211` — deprecated in
+  3.12, and the test suite already emits 37 warnings about it.
+- **Also:** `models/user.py:14` uses `datetime.datetime.now` — naive **local** time, inconsistent
+  with the `utcnow` used everywhere else. Not in the old document.
+
+### Dead OAuth2 schemes *(was #13)*
+`auth/utils.py:18` and `dependencies.py:11-13` both define an `OAuth2PasswordBearer`, and **neither
+is used** — `get_current_user` reads the cookie directly. The fix is deletion, not consolidation.
+
+### Nullable `user_id` foreign keys *(was #10)*
+Every write path sets `user_id`, so the columns can be tightened. This needed the Alembic fix first;
+it is now unblocked.
+
+### No React error boundaries *(was #36)*
+One component crash still takes down the whole app.
 
 ---
 
-## Open Questions
+## Low
 
-- **Q1:** Is the port supposed to be 8000 or 8080? Which Dockerfile is canonical?
-- **Q2:** Should coding problem endpoints require authentication?
-- **Q3:** Is there a plan for token refresh, or is the current "re-login on expiry" intentional?
-- **Q4:** What's the intended local dev setup — Docker or running frontend/backend directly?
-- **Q5:** Are the empty migration and docker-compose files placeholders for future work?
-- **Q6:** Is there a budget or rate limit strategy for the Anthropic API usage?
+Confirmed still present, none of them urgent.
+
+- **(was #15)** `RegisterForm.tsx:30` — `setIsLoading(true)` is commented out, so the button never
+  shows a loading state while `finally` still clears it.
+- **(was #16)** `LoginForm.tsx:73-75` — a second `type="submit"` button labelled "Register" inside
+  the login form. It submits the login form.
+- **(was #17)** `AIChat/index.tsx:127` — optimistic message IDs from `Math.random()`.
+- **(was #18)** `isLangaugeSupported` misspelled in `CodingChallenges/index.tsx` and
+  `SolutionEditor.tsx`.
+- **(was #20)** `SearchBar.tsx:43` — `p-[1-px]` is not valid Tailwind.
+- **(was #21)** `StackOverflowSearch/index.tsx:118` — empty `useEffect`.
+- **(was #26)** `types/index.ts` — `APIResponse<T>` and `ChatInputProps` each defined twice.
+- **(was #27)** Scattered `any` types.
+- **(was #28)** `apiConfig.ts:6` logs the API base URL on every import.
+- **(was #32)** No error tracking. Lambda gives CloudWatch logs by default, but nothing is
+  structured and nothing alerts.
+- **(was #35)** ~~Hardcoded DB URL in `alembic.ini`~~ — fixed in this pass.
+- **(was #37)** Almost no `aria-*` attributes; no keyboard navigation for custom components.
+- **(was #38)** No `AbortController` in `apiService.ts`.
+- **Dead files from the App Runner era:** `backend/Dockerfile.prod`, `frontend/Dockerfile.prod`,
+  `frontend/nginx.conf`, `docker-compose.prod.yml` (0 bytes, was #30), and the empty
+  `app/models/stack_overflow.py`. Delete rather than fill.
+- **`test.db`** (0 bytes) is tracked in git at the repo root.
+- **Stale CI secret name:** `deploy-frontend.yml` reads `APP_RUNNER_BACKEND_URL_WITH_API_PREFIX`,
+  which now holds `/api/v1`. Misleading post-migration.
+
+---
+
+## Questions
+
+### Answered
+- **Q1 — Is the port 8000 or 8080? Which Dockerfile is canonical?**
+  Neither. The backend is a Lambda handler with no listening port. `backend/dockerfile` (lowercase)
+  is canonical; `Dockerfile.prod` is dead.
+- **Q2 — Should coding problem endpoints require authentication?**
+  **No — they stay public.** Guest mode (`App.tsx`, `isGuest`) is a deliberate feature and browsing
+  challenges is part of it. The Judge0 quota gets an IP-based rate limit on `/submit` instead.
+  Tracked under **High** above.
+- **Q4 — Docker or direct for local dev?**
+  Direct: `uvicorn app.main:app --reload --port 8080` and `npm run dev`. Docker is only a build
+  artifact for Lambda.
+- **Q5 — Are the empty migration and docker-compose files placeholders?**
+  No. Leftovers. The migration is fixed; the compose file should be deleted.
+- **Q6 — Is there a budget or rate limit strategy for Anthropic usage?**
+  There is none today. `effort: "low"` and `max_tokens: 2048` bound the cost *per call*, but nothing
+  bounds calls per user. Tracked under **High**.
+
+### Still open
+- **Q3 — Is "re-login on expiry" intentional, or should there be token refresh?**
+  A 30-minute expiry with no refresh and no 401 interception is a rough experience. Needs a
+  decision before anyone builds it.
+- **Q7 — Should `devdash.online` be repointed at CloudFront, or is the parked domain deliberate?**
+  Carried over from [AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md) TODO #6 — still unresolved.
