@@ -30,10 +30,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onGuestLogin }) => {
         title: "Login successful",
         description: "Welcome back!",
       });
-    } catch (error : any) {
+    } catch (error) {
       toast({
         title: "Login failed",
-        description: `Invalid username or password: ${error.message}`,
+        description: `Invalid username or password: ${error instanceof Error ? error.message : String(error)}`,
         variant: "destructive"
       });
     } finally {

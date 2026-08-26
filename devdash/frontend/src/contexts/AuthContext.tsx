@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children})=
                 // the browser automatically send the HttpOnly cookie
                 const userData = await authService.getCurrentUser();
                 setUser(userData)
-            } catch (error) {
+            } catch {
                 // If the request fails (e.g., 401), it means no valid session
                 setUser(null);
             } finally {

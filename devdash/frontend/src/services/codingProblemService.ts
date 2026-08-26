@@ -8,9 +8,11 @@ export interface CodingProblem {
   slug: string;
   difficulty: string;
   description: string;
+  // Test-case values are arbitrary JSON decided by the problem, so they stay
+  // opaque here; the UI renders them via JSON.stringify/String.
   example_cases: Array<{
-    input: any;
-    output: any;
+    input: unknown;
+    output: unknown;
   }>;
   starter_code?: Record<string, string>;
   example_input?:string
@@ -21,9 +23,10 @@ export interface SubmissionResult {
   results: Array<{
     test_case: number;
     passed: boolean;
-    input: any;
-    expected: any;
-    actual?: any;
+    // Keyed by parameter name; the values themselves are problem-defined.
+    input: Record<string, unknown>;
+    expected: unknown;
+    actual?: unknown;
     error?: string;
   }>;
   score: number;

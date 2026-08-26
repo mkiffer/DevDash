@@ -7,12 +7,13 @@ const JSON_CONTENT_TYPE = 'application/json';
  * Errors come back as {"detail": ...}, where detail is a string for ordinary
  * HTTPExceptions but an array of objects for 422 validation failures.
  */
-const describeError = (errorData: any, response: Response): string => {
-    const detail = errorData?.detail;
+const describeError = (errorData: unknown, response: Response): string => {
+    const body = (errorData ?? {}) as { detail?: unknown; message?: unknown };
+    const detail = body.detail;
 
     if (typeof detail === 'string') return detail;
     if (detail) return JSON.stringify(detail);
-    if (typeof errorData?.message === 'string') return errorData.message;
+    if (typeof body.message === 'string') return body.message;
 
     return `API request failed: ${response.status} ${response.statusText}`;
 };
@@ -57,7 +58,7 @@ export const parseJsonResponse = async <T>(
 export const apiRequest = async<T>(
     endpoint: string,
     method: string = 'GET',
-    data?: any,
+    data?: unknown,
 
 ) : Promise<T> => {
     

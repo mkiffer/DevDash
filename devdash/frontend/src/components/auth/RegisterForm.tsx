@@ -40,7 +40,7 @@ export const RegisterForm: React.FC = () => {
         title: "Registration successful",
         description: "Your account has been created",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Registration failed",
         description: "Username or email may already be taken",

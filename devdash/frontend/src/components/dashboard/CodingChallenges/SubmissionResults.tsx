@@ -35,14 +35,14 @@ const SubmissionResults: React.FC<SubmissionResultsProps> = ({ result }) => {
             <div className={`px-4 py-2 flex justify-between items-center ${
               testResult.passed === true ? 'bg-green-50' : 'bg-red-50'
             }`}>
-              <span className="font-medium">Test Case {index + 1} - Input: "{testResult.input[`${Object.keys(testResult.input)[0]}`]}" </span>
+              <span className="font-medium">Test Case {index + 1} - Input: "{String(testResult.input[Object.keys(testResult.input)[0]])}" </span>
               <Badge variant={testResult.passed === true ? 'default' : 'destructive'}>
                 {testResult.passed}
               </Badge>
             </div>
             
             <div className="p-4 space-y-3">
-              {testResult.actual && (
+              {Boolean(testResult.actual) && (
                 <div>
                   <h4 className="text-sm font-semibold mb-1">Standard Output:</h4>
                   <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
