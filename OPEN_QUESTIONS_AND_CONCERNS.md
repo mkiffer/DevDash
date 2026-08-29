@@ -10,8 +10,9 @@ Browser → CloudFront ─/api/v1/*─→ API Gateway (HTTP API) → Lambda (con
 ```
 
 Original item numbers are preserved as `(was #N)` so this file can be diffed against the old one.
-Infrastructure history, the secrets correction, and the image-pin outage post-mortem live in
-[AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md) and are not duplicated here.
+Infrastructure history, the full secrets correction, and the image-pin outage post-mortem are
+kept in separate internal migration notes that are not part of this repository; the points that
+matter for the code are summarised inline below.
 
 ---
 
@@ -107,7 +108,7 @@ Recorded so they don't get re-raised.
 
 | Was # | Item | Status |
 |---|---|---|
-| 1 | Committed secrets in `.env` | **False premise.** The only `.env*` ever committed is `backend/.env.example` (placeholders). `devdash/.env` has never been tracked and is gitignored. Full-history scans found nothing. See the correction in [AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md). Key rotation is still worth doing as hygiene — tracked there as TODO #1 — but it is not incident response. |
+| 1 | Committed secrets in `.env` | **False premise.** The only `.env*` ever committed is `backend/.env.example` (placeholders). `devdash/.env` has never been tracked and is gitignored. A full-history scan for `sk-ant`, the three `*_API_KEY` names, and any database password found nothing but env-var references and the local docker-compose default. Rotating the three API keys is still worth doing as hygiene, but it is not incident response. |
 | 2 | Docker port mismatch (8000 vs 8080) | **Moot.** The backend is a Lambda container image: no `EXPOSE`, `CMD ["app.lambda_handler.handler"]`. CI builds `-f devdash/backend/dockerfile` explicitly. |
 | 29 | Unused `axios` import in `RegisterForm` | Removed. |
 | 33 | Frontend nginx config not applied | **Moot.** The frontend is S3 + CloudFront. `frontend/Dockerfile.prod` and `nginx.conf` are dead files. |
@@ -247,4 +248,4 @@ current. None are urgent.
   A 30-minute expiry with no refresh and no 401 interception is a rough experience. Needs a
   decision before anyone builds it.
 - **Q7 — Should `devdash.online` be repointed at CloudFront, or is the parked domain deliberate?**
-  Carried over from [AWS_MIGRATION_NOTES.md](AWS_MIGRATION_NOTES.md) TODO #6 — still unresolved.
+  Carried over from the migration TODO list — still unresolved.
