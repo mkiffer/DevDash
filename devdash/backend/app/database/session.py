@@ -15,7 +15,6 @@ logger.info("Top of session.py loading...")
 # Construct the database URL from settings
 DATABASE_URL=settings.DATABASE_URL
 
-#logger.info(f"Attempting to create SQLAlchemy engine with URL: {DATABASE_URL}")
 
 try:
     # NullPool: Lambda containers are short-lived and Neon pools connections at
@@ -29,8 +28,9 @@ try:
     logger.info("SessionLocal factory created.")
 
 except Exception as e:
-    logger.critical(f"Error during SQLAlchemy engine creation: {e}")
-    raise
+    raise RuntimeError(
+        f"Could not create database engine ({type(e).__name__}); check DATABASE_URL"
+    ) from None
 
 #Base = declarative_base()
 

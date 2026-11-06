@@ -19,7 +19,6 @@ def setup_database() -> None:
     """Create initial database tables if they don't exist"""
     engine = create_engine(settings.DATABASE_URL)
     Base.metadata.create_all(engine)
-    print(f"Database initialized with URL: {settings.DATABASE_URL}")
 
 if __name__ == "__main__":
     # Check if we should run Alembic migrations or just setup tables
