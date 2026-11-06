@@ -15,7 +15,7 @@ logger.info("Top of session.py loading...")
 # Construct the database URL from settings
 DATABASE_URL=settings.DATABASE_URL
 
-logger.info(f"Attempting to create SQLAlchemy engine with URL: {DATABASE_URL}")
+#logger.info(f"Attempting to create SQLAlchemy engine with URL: {DATABASE_URL}")
 
 try:
     # NullPool: Lambda containers are short-lived and Neon pools connections at
