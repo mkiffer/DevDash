@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SearchBar } from './SearchBar';
 import { ResultList } from './ResultList';
 import { searchStackOverflow, getQuestionAnswers } from '../../../services/stackOverflowService';
 import { StackOverflowResult } from '../../../types';
 import { AnswerView } from './AnswerView';
 import { useToast } from '@/hooks/use-toast';
-//import { data } from 'react-router-dom';
 
 interface Answer {
   answer_id: number;
@@ -31,29 +30,11 @@ export const StackOverflowSearch: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedQuestion, setSelectedQuestion] = useState<SelectedQuestion | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
+  // Nothing is fetched until the user searches. The panel used to search for
+  // '[score:50] is:question' on load, but Stack Exchange returned 0 results for
+  // it, so every page load woke a Lambda container and spent quota on an empty list.
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const { toast } = useToast();
-
-  // Load initial questions
-  useEffect(() => {
-    const loadInitialQuestions = async () => {
-      try {
-        setIsLoading(true);
-        const data = await searchStackOverflow('[score:50] is:question');
-        setResults(data.items);
-      } catch (error) {
-        console.error('Error loading initial questions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load initial questions",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialQuestions();
-  }, [toast]);
 
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
@@ -74,6 +55,7 @@ export const StackOverflowSearch: React.FC = () => {
     try {
       const data = await searchStackOverflow(query);
       setResults(data.items);
+      setHasSearched(true);
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -104,9 +86,6 @@ export const StackOverflowSearch: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-  }, [query, results]);
-
   return (
     <div className="flex flex-col overflow-auto-y">
       <div className="flex-none pt-1 pb-2">
@@ -125,11 +104,15 @@ export const StackOverflowSearch: React.FC = () => {
             answers={answers}
             onClose={() => setSelectedQuestion(null)}
           />
-        ) : (
+        ) : hasSearched ? (
           <ResultList 
             results={results}
             onQuestionSelect={handleQuestionSelect}
           />
+        ) : (
+          <div className="text-center text-gray-500 py-8">
+            Search Stack Overflow to see questions and answers.
+          </div>
         )}
       </div>
     </div>
