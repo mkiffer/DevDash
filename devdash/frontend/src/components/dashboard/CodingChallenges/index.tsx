@@ -1,5 +1,5 @@
 // devdash/frontend/src/components/dashboard/CodingChallenges/index.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { SubmissionResult, CodingProblem, codingProblemService } from '@/services/codingProblemService';
 import { useToast } from '@/hooks/use-toast';
 import ChallengeToolbar from '@/components/dashboard/CodingChallenges/ChallengeToolbar';
@@ -7,7 +7,7 @@ import ChallengeList from '@/components/dashboard/CodingChallenges/ChallengeList
 import ChallengeDetails from '@/components/dashboard/CodingChallenges/ChallengeDetails';
 import SolutionEditor from '@/components/dashboard/CodingChallenges/SolutionEditor';
 import SubmissionResults from '@/components/dashboard/CodingChallenges/SubmissionResults';
-import { getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
+import { filterChallengesByDifficulty, getStarterCode, LANGUAGE_OPTIONS, DIFFICULTY_OPTIONS } from '@/components/dashboard/CodingChallenges/CodingChallengeUtils';
 
 export interface CodingProblemComponentProps {
   isDarkMode: boolean;
@@ -24,11 +24,18 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const { toast } = useToast();
 
+  // A ref because reading or updating this cache should never cause a re-render.
+  const openedChallengesBySlug = useRef(new Map<string, CodingProblem>());
+
+  const visibleChallenges = useMemo(
+    () => filterChallengesByDifficulty(challenges, selectedDifficulty),
+    [challenges, selectedDifficulty]
+  );
+
   const loadChallenges = useCallback(async () => {
     setIsLoading(true);
     try {
-      const difficultyParam = selectedDifficulty === 'all' ? undefined : selectedDifficulty;
-      const response = await codingProblemService.getProblems(difficultyParam);
+      const response = await codingProblemService.getProblems();
       setChallenges(response.data);
     } catch (error) {
       console.error('Error loading challenges:', error);
@@ -40,11 +47,10 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDifficulty, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    // Fetching on mount and whenever the difficulty filter changes is the
-    // legitimate "synchronize with an external system" case for an effect, but
+    // Fetching on mount is the legitimate "synchronize with an external system" case for an effect, but
     // the request has to raise the loading flag before it starts, and the rule
     // traces that synchronous setState through the call graph. Satisfying it
     // would mean dropping the spinner or adopting a data-fetching library.
@@ -52,14 +58,25 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
     loadChallenges();
   }, [loadChallenges]);
 
+  const openChallenge = (challenge: CodingProblem) => {
+    setCurrentChallenge(challenge);
+    setCode(getStarterCode(selectedLanguage, challenge.title, challenge.example_input));
+  };
+
   const loadChallenge = async (slug: string) => {
-    setIsLoading(true);
     setSubmissionResult(null);
+
+    const openedChallenge = openedChallengesBySlug.current.get(slug);
+    if (openedChallenge) {
+      openChallenge(openedChallenge);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await codingProblemService.getProblem(slug);
-      setCurrentChallenge(response.data);
-      const starterCode = getStarterCode(selectedLanguage, response.data.title, response.data.example_input);
-      setCode(starterCode);
+      openedChallengesBySlug.current.set(slug, response.data);
+      openChallenge(response.data);
     } catch (error) {
       console.error('Error loading challenge:', error);
       toast({
@@ -91,8 +108,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
         code,
         selectedLanguage
       );
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Check if the backend returned a definitive error (like Compilation Error)
       if (submitResponse.data.status === 'Error') {
         toast({
@@ -131,6 +147,11 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
     }
   };
 
+  const handleRefresh = () => {
+    openedChallengesBySlug.current.clear();
+    loadChallenges();
+  };
+
   const handleBack = () => {
     setCurrentChallenge(null);
     setSubmissionResult(null);
@@ -145,7 +166,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
         difficulties={DIFFICULTY_OPTIONS}
         onLanguageChange={handleLanguageChange}
         onDifficultyChange={setSelectedDifficulty}
-        onRefresh={loadChallenges}
+        onRefresh={handleRefresh}
         isLoading={isLoading}
         onBack={handleBack}
         showBack={!!currentChallenge}
@@ -153,7 +174,7 @@ export const CodingProblemComponent: React.FC<CodingProblemComponentProps> = ({ 
       <div className="flex-1 overflow-auto">
         {!currentChallenge ? (
           <ChallengeList
-            challenges={challenges}
+            challenges={visibleChallenges}
             currentChallengeId={null}
             isLoading={isLoading}
             onSelectChallenge={loadChallenge}

@@ -1,3 +1,5 @@
+import { CodingProblem } from '@/services/codingProblemService';
+
 // components/dashboard/HackerRank/hackerRankUtils.ts
 
 /**
@@ -54,3 +56,16 @@ export const getStarterCode = (language: string, challengeName?: string, example
     'medium': 'bg-yellow-100 text-yellow-800',
     'hard': 'bg-red-100 text-red-800'
   };
+const NO_DIFFICULTY_FILTERS = ['', 'all'];
+
+/**
+ * Filters in the browser because the list response already holds every challenge
+ * and its difficulty, so asking the backend again would only add a wait.
+ */
+export const filterChallengesByDifficulty = (
+  challenges: CodingProblem[],
+  selectedDifficulty: string
+): CodingProblem[] =>
+  NO_DIFFICULTY_FILTERS.includes(selectedDifficulty)
+    ? challenges
+    : challenges.filter(challenge => challenge.difficulty === selectedDifficulty);

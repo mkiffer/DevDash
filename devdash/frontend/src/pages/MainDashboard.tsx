@@ -24,7 +24,7 @@ const GuestAIChatPrompt = () => (
 
 const DashboardLayout: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { logout, isGuest } = useAuth();
+  const { logout, isGuest, isLoading } = useAuth();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -88,7 +88,14 @@ const DashboardLayout: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
-              {isGuest ? <GuestAIChatPrompt /> : <AIChat />}
+              {/* Chat needs a valid session, so it waits for the check to finish. */}
+              {isLoading ? (
+                <p className="text-muted-foreground">Checking your session...</p>
+              ) : isGuest ? (
+                <GuestAIChatPrompt />
+              ) : (
+                <AIChat />
+              )}
             </CardContent>
           </Card>
 

@@ -4,6 +4,7 @@ import { ChatMessage, ChatSessionPreview } from '../../../types';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { SessionList } from './SessionList';
+import { updateSessionsAfterMessage } from './sessionPreviews';
 import { chatService } from '../../../services/aiChatService';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -157,9 +158,7 @@ export const AIChat: React.FC = () => {
         ai_response
       ]);
       
-      // Refresh session list to update the preview text
-      const sessionsResponse = await chatService.listSessions();
-      setSessions(sessionsResponse.data?.sessions || []);
+      setSessions(prev => updateSessionsAfterMessage(prev, activeSessionId, content, new Date()));
 
     } catch (error) {
       console.error('Error sending message:', error);

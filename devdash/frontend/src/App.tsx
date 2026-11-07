@@ -8,13 +8,13 @@ import {Toaster} from "./components/ui/toaster"
 // Auth wrapper component
 const AuthenticatedApp = () => {
   
-  const { isAuthenticated, isLoading, isGuest } = useAuth();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-  
-  return isAuthenticated || isGuest ? <DashboardLayout /> : <LoginPage />;
+  const { isAuthenticated, isLoading, isGuest, isReturningUser } = useAuth();
+
+  // Neither screen waits for the session check. Returning users get the dashboard
+  // and new visitors get the login page, so public content isn't held up by /auth/me.
+  const isExpectedToBeLoggedIn = isLoading && isReturningUser;
+
+  return isAuthenticated || isGuest || isExpectedToBeLoggedIn ? <DashboardLayout /> : <LoginPage />;
 };
 
 function App() {

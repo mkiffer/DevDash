@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 import json
@@ -16,11 +16,22 @@ router = APIRouter()
 JUDGE0_API_URL = "https://judge0-ce.p.rapidapi.com"
 JUDGE0_API_KEY = settings.JUDGE0_API_KEY
 
+# Short programs usually finish in a second or two, so checking early saves real
+# waiting, then backing off limits how much of the RapidAPI quota one slow
+# submission uses. The 19 s total leaves room for a database lookup and a cold
+# start inside API Gateway's 30 s limit.
+JUDGE0_POLL_DELAYS_SECONDS = (0.5, 1, 1.5, 2, 2, 2, 2, 2, 2, 2, 2)
+
+# Challenges rarely change and contain no user data, so CloudFront can hold them
+# for a day. Browsers refresh sooner because a CDN invalidation can't reach them.
+PUBLIC_CHALLENGE_CACHE_CONTROL = "public, max-age=300, s-maxage=86400"
+
 
 
 
 @router.get("/problems", response_model=Dict[str,List[dict]])
 async def get_problems(
+    response: Response,
     difficulty: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
@@ -31,6 +42,7 @@ async def get_problems(
         query = query.filter(CodingProblem.difficulty == difficulty)
 
     problems = query.all()
+    response.headers["Cache-Control"] = PUBLIC_CHALLENGE_CACHE_CONTROL
     #list comprehension in return statement
     return {"data":[
         {
@@ -45,13 +57,14 @@ async def get_problems(
     }
 
 @router.get("/problems/{slug}", response_model=dict)
-async def get_problem(slug: str, db: Session = Depends(get_db)):
+async def get_problem(slug: str, response: Response, db: Session = Depends(get_db)):
     '''get a problem by slug'''
     problem = db.query(CodingProblem).filter(CodingProblem.slug==slug).first()
 
     if not problem:
         raise HTTPException(status_code=404, detail = "problem not found")
     
+    response.headers["Cache-Control"] = PUBLIC_CHALLENGE_CACHE_CONTROL
     return{
         "id": problem.id,
         "title": problem.title,
@@ -98,6 +111,10 @@ async def submit_solution(
 
     test_runner = get_test_runner(language, problem, user_code)
 
+    # The database isn't needed again, and polling Judge0 can take many seconds.
+    # Closing here avoids holding a transaction open for that whole time.
+    db.close()
+
     #send to judge0
     headers = {
         "content-type": "application/json",
@@ -123,11 +140,9 @@ async def submit_solution(
             if not token:
                 raise HTTPException(status_code=500, detail="Failed to get submission token from Judge0")
 
-            # 4. Keep your original polling loop
-            attempts = 0
-            while attempts < 10:
-                await asyncio.sleep(2) # Increased sleep time slightly
-                attempts += 1
+            # 4. Poll until Judge0 reports a finished status, or the delays run out
+            for poll_delay_seconds in JUDGE0_POLL_DELAYS_SECONDS:
+                await asyncio.sleep(poll_delay_seconds)
                 status_response = await client.get(
                     f"{JUDGE0_API_URL}/submissions/{token}",
                     headers=headers

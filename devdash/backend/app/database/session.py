@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import NullPool
 from app.core.config import settings
+from app.core.request_timing import attach_database_timing
 import logging
 from app.models.base import Base
 
@@ -22,6 +23,7 @@ try:
     # validates connections to avoid stale-connection errors across cold/warm
     # invocations.
     engine = create_engine(DATABASE_URL, poolclass=NullPool, pool_pre_ping=True)
+    attach_database_timing(engine)
     logger.info("SQLAlchemy engine object created (but not necessarily connected).")
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

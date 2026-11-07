@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.routes import stack_overflow, chat, auth, coding_problems
 from app.database.session import engine, Base, get_db
 from app.core.config import settings
+from app.core.request_timing import add_server_timing_header
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+# Added last so it runs first and its total includes the other middleware.
+app.middleware("http")(add_server_timing_header)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

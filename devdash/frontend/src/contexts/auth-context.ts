@@ -6,6 +6,7 @@ export interface AuthContextType {
     isAuthenticated: boolean;
     isGuest: boolean;
     isLoading: boolean;
+    isReturningUser: boolean;
     login: (cerdentials: LoginRequest)=> Promise<void>;
     register: (credentials: RegisterRequest)=>Promise<void>;
     logout: () => Promise<void>
