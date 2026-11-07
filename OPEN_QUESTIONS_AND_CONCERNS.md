@@ -1,18 +1,113 @@
 # Open Questions and Concerns
 
-Re-audited **2026-08-26** against `main`, then updated across two rounds of fixes the same day. The previous revision of this file was written
+Re-audited **2026-08-26** against `main`, then updated across two rounds of fixes the same day. A performance round was added on **2026-11-08**. The previous revision of this file was written
 2026-03-22 against the **App Runner + RDS + Docker Compose** stack, which no longer exists.
 Every item below was re-verified against the current architecture:
 
 ```
-Browser → CloudFront ─/api/v1/*─→ API Gateway (HTTP API) → Lambda (container) → Neon Postgres
-                     └─/*───────→ S3 (static frontend)
+Browser → CloudFront ─/api/v1/coding/problems*─→ CDN cache (1 day) ─miss─┐
+                     ├─/api/v1/*───────────────→ API Gateway (HTTP API) → Lambda (container, Sydney) → Neon Postgres (Sydney)
+                     └─/*──────────────────────→ S3 (static frontend)
 ```
 
 Original item numbers are preserved as `(was #N)` so this file can be diffed against the old one.
 Infrastructure history, the full secrets correction, and the image-pin outage post-mortem are
 kept in separate internal migration notes that are not part of this repository; the points that
 matter for the code are summarised inline below.
+
+---
+
+## Fixed (2026-11-08, round 3 — performance)
+
+Coding challenges took **2.3 s** to load on a warm Lambda and **8 s** after a quiet period. Every
+change below was chosen from measurements, and the reasoning is recorded so it can be revisited.
+
+### How it was measured: a `Server-Timing` header
+Before changing anything, every response gained a `Server-Timing` header
+(`app/core/request_timing.py`): `total`, `db_connect`, `db_query`, plus `cold` on a container's
+first request. SQLAlchemy engine events record connect and query time into a `ContextVar`, so the
+numbers are per request even under async.
+
+- **Why:** browser dev tools show it next to the request, so a slow request can be split into
+  network, connecting, querying and cold start without opening CloudWatch.
+- **What it found:** a request that never touched the database took 0.12 s. A challenge-list request
+  took 2.29 s, because `NullPool` makes every request connect afresh and each database round trip
+  (TLS, auth, queries; about nine per request) crossed the Pacific at roughly 200 ms each.
+- **Trade-off:** anyone can see the timings. They reveal cold starts and database time, but no data.
+  Responses served from the CDN cache carry the timings from when they were first generated.
+
+### Neon moved from us-east-1 to Sydney
+Lambda already ran in Sydney, next to the users. Only the database was far away.
+
+- **Alternatives:** moving Lambda to the US next to the database would also have helped, cutting
+  each request from about nine Pacific crossings to one. With both in Sydney, near the users, a
+  request crosses none. Keeping connections pooled inside the Lambda container wasn't pursued, for
+  the reasons in the README (frozen containers, one pool per container).
+- **How:** a Neon project's region can't be changed, so a new project was created on the same
+  Postgres version (18) and the data copied with `pg_dump` / `pg_restore`, with row counts and the
+  Alembic revision compared before the cutover. The old project is kept for rollback for at least
+  a week.
+- **Result:** a warm challenge-list request went from **2.29 s to 0.16 s** (server time 2293 ms to
+  about 40 ms; connecting 1364 ms to about 30 ms).
+- **Still slow:** the first request after a quiet period took 6.2 s, of which 3.1 s was Neon waking
+  its database from scale-to-zero. The free plan doesn't let that be turned off.
+
+### Challenge reads cached at CloudFront
+Challenges are the same for every visitor and change rarely, so they don't need Lambda or the
+database on every request.
+
+- Both `GET` challenge routes send `Cache-Control: public, max-age=300, s-maxage=86400` (5 minutes in
+  browsers, 1 day at the CDN). Only successful responses carry it, so a 404 is never cached.
+- A CloudFront behaviour for `/api/v1/coding/problems*` sits ahead of `/api/v1/*` and uses a cache
+  policy that honours the origin's `Cache-Control`. Cookies and headers are left out of the cache key,
+  so every visitor shares one copy. `POST` submissions under the same path are never cached.
+- **Result:** about **0.07 s** on a cache hit, against 0.92 s on a miss.
+- **Trade-off:** an edited challenge can stay stale for up to a day unless the CDN cache is
+  invalidated. That's a manual step, because the backend deploy role deliberately has no CloudFront
+  permissions.
+
+### Judge0 polling and the database connection during a submission
+- The frontend waited a fixed 2 s after every submission before asking for the result, and the
+  backend's first check also came after 2 s. Now there's no frontend wait, and the backend polls on a
+  backoff schedule (`JUDGE0_POLL_DELAYS_SECONDS`: first check at 0.5 s, 19 s in total, inside API
+  Gateway's 30 s limit).
+- The database session is closed after the test runner is built and before polling, so a submission
+  doesn't hold a Neon connection open while it waits on Judge0.
+- **Trade-off:** fast submissions now use 2–3 Judge0 status checks instead of 1, which counts against
+  the RapidAPI quota.
+
+### Fewer requests from the frontend
+- **Difficulty filter in the browser:** the challenge list is small, so it's fetched once and
+  filtered client-side instead of re-requested on every filter change.
+- **Opened challenges kept in memory:** reopening one sends no request. Refresh clears the cache.
+- **Chat session list updated locally:** after a message is sent, the session moves to the top and its
+  preview is updated in place (`AIChat/sessionPreviews.ts`) instead of refetching the whole list.
+- **No Stack Overflow search on page load:** the panel searched for `[score:50] is:question` when it
+  opened. In production that returned **0 results**, so every page load woke a Lambda container and
+  spent Stack Exchange quota to show an empty list. The panel now waits for the user to search.
+  Searches themselves are not cached; that's left until search is shown to be slow.
+
+### The dashboard no longer waits for the session check
+The app used to show a full-screen loader until `/auth/me` answered, which on a cold start could be
+several seconds before anything appeared.
+
+- After a successful login the frontend stores a hint in `localStorage` (`devdash.hasSession`). The
+  session cookie is HttpOnly, so JavaScript can't see it directly. A returning user with the hint
+  sees the dashboard straight away while the check runs. A new visitor sees the login page straight
+  away. The chat panel waits for the check, since it needs the user.
+- **The hint is not a security boundary.** It only chooses what to render first. The backend still
+  authenticates every request, and a failed check clears the hint and shows the login page.
+- A late answer from the session check is ignored if the user has already logged in, logged out or
+  chosen guest mode (`initialCheckIsSuperseded` in `AuthContext.tsx`), so a slow check can't undo
+  what they did.
+- **Trade-offs:** challenges and `/auth/me` now load in parallel, which can start two cold containers
+  at once when the CDN cache misses. Existing users have no hint on their first visit after the
+  deploy, so they see the login page briefly once.
+
+### Considered and not done
+- **Reducing Lambda cold starts** (provisioned concurrency, a smaller image, or a scheduled warm-up
+  request). Deferred: the fixes above remove most of the cold starts users actually wait for, and
+  provisioned concurrency would end the near-zero running cost.
 
 ---
 
@@ -204,7 +299,8 @@ current. None are urgent.
 - **(was #18)** `isLangaugeSupported` misspelled in `CodingChallenges/index.tsx` and
   `SolutionEditor.tsx`.
 - **(was #20)** `SearchBar.tsx:36` — `p-[1-px]` is not valid Tailwind.
-- **(was #21)** `StackOverflowSearch/index.tsx:107` — empty `useEffect`.
+- ~~**(was #21)** `StackOverflowSearch/index.tsx:107` — empty `useEffect`~~ — **resolved** in round 3,
+  removed along with the on-load search.
 - **(was #26)** `types/index.ts` — `ChatInputProps` still defined twice (lines 49 and 60). The
   duplicate `APIResponse<T>` was removed by the ESLint branch.
 - ~~**(was #27)** Scattered `any` types~~ — **resolved** by the ESLint branch; no `any` remains
@@ -249,3 +345,9 @@ current. None are urgent.
   decision before anyone builds it.
 - **Q7 — Should `devdash.online` be repointed at CloudFront, or is the parked domain deliberate?**
   Carried over from the migration TODO list — still unresolved.
+- **Q8 — Should Lambda cold starts be reduced?** After round 3, the remaining slow case is the
+  first request after a quiet period (about 6 s, half of it Neon waking). Provisioned concurrency
+  or a paid Neon plan would fix it, at a monthly cost. Is that worth paying for at this traffic?
+- **Q9 — Should Stack Overflow searches be cached at CloudFront like challenges?** They're public
+  and would save Stack Exchange quota, but it's another manual CloudFront change, and nobody has
+  reported search as slow.
